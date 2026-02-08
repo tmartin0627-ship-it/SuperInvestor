@@ -6,6 +6,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 const input = new InputHandler();
+const touchControls = new TouchControls(canvas, input);
 const audio = new AudioManager();
 const particles = new ParticleSystem();
 const floatingText = new FloatingText();
@@ -107,6 +108,7 @@ function update(dt) {
   }
 
   input.clearFrameState();
+  touchControls.update(dt, currentState);
 }
 
 function updateTitle(dt) {
@@ -368,6 +370,9 @@ function render() {
   }
 
   ctx.restore();
+
+  // Touch controls overlay (drawn in screen-space, outside game viewport transform)
+  touchControls.render(ctx, canvas.width, canvas.height, currentState);
 }
 
 function renderPlaying() {

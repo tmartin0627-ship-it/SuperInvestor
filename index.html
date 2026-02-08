@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>BULL RUN - A Wall Street Adventure</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,10 +15,14 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      height: 100dvh;
       font-family: sans-serif;
+      -webkit-user-select: none;
+      user-select: none;
     }
     canvas {
       display: block;
+      touch-action: none;
     }
   </style>
 </head>
@@ -24,6 +30,7 @@
   <canvas id="gameCanvas"></canvas>
   <script src="js/constants.js"></script>
   <script src="js/input.js"></script>
+  <script src="js/touchcontrols.js"></script>
   <script src="js/camera.js"></script>
   <script src="js/physics.js"></script>
   <script src="js/particles.js"></script>
