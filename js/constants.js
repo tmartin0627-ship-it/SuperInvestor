@@ -11,6 +11,10 @@ const GameState = {
   LEVEL_COMPLETE: 'levelComplete'
 };
 
+// Supabase config — fill in with your project credentials
+const SUPABASE_URL = 'https://ldvqqitugklrutkooofg.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_0ELBZFneSvZPgjy314KWVQ_XbgU4x-A';
+
 const CONFIG = {
   // Display
   VIRTUAL_WIDTH: 960,

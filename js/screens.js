@@ -252,6 +252,10 @@ class GameOverScreen {
     this.animTime = 0;
     this.finalScore = 0;
     this.bullsCollected = 0;
+    this.leaderboardData = null;
+    this.playerRank = null;
+    this.playerTotal = null;
+    this.leaderboardStatus = null; // 'pending'|'submitting'|'done'|'error'|'skipped'
   }
 
   update(dt) {
@@ -297,8 +301,11 @@ class GameOverScreen {
     ctx.fillText('Final Portfolio: $' + this.finalScore.toLocaleString(), w / 2, h * 0.62);
     ctx.fillText('Bulls Collected: ' + this.bullsCollected, w / 2, h * 0.68);
 
+    // Leaderboard
+    renderLeaderboardSection(ctx, w, h, 0.74, this);
+
     // Continue prompt
-    if (Math.floor(this.animTime * 1.5) % 2 === 0) {
+    if (this.leaderboardStatus !== 'pending' && Math.floor(this.animTime * 1.5) % 2 === 0) {
       ctx.fillStyle = '#AAA';
       ctx.font = '20px sans-serif';
       const isMobileGO = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -318,6 +325,10 @@ class LevelCompleteScreen {
     this.finalScore = 0;
     this.bullsCollected = 0;
     this.timeTaken = 0;
+    this.leaderboardData = null;
+    this.playerRank = null;
+    this.playerTotal = null;
+    this.leaderboardStatus = null;
   }
 
   update(dt) {
@@ -372,18 +383,81 @@ class LevelCompleteScreen {
       ctx.fillText('Time: ' + this.timeTaken.toFixed(1) + 's', w / 2, h * 0.68);
     }
 
-    if (this.animTime > 2) {
+    // Leaderboard
+    if (this.animTime > showDelay + 0.9) {
+      renderLeaderboardSection(ctx, w, h, 0.76, this);
+    }
+
+    if (this.animTime > 2 && this.leaderboardStatus !== 'pending') {
       if (Math.floor(this.animTime * 1.5) % 2 === 0) {
         ctx.fillStyle = '#AAA';
         ctx.font = '20px sans-serif';
         const isMobileLC = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-        ctx.fillText(isMobileLC ? 'Tap to play again' : 'Press ENTER to play again', w / 2, h * 0.82);
+        ctx.fillText(isMobileLC ? 'Tap to play again' : 'Press ENTER to play again', w / 2, h * 0.88);
       }
     }
 
     // Celebratory text
     ctx.fillStyle = '#555';
     ctx.font = 'italic 13px sans-serif';
-    ctx.fillText('Congratulations! You survived the bear market.', w / 2, h * 0.92);
+    ctx.fillText('Congratulations! You survived the bear market.', w / 2, h * 0.95);
+  }
+}
+
+// ==========================================
+//  Shared Leaderboard Rendering
+// ==========================================
+function renderLeaderboardSection(ctx, w, h, startY, screen) {
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  if (screen.leaderboardStatus === 'submitting' || screen.leaderboardStatus === 'pending') {
+    ctx.fillStyle = '#888';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('Submitting score...', w / 2, h * startY);
+    return;
+  }
+
+  if (screen.leaderboardStatus === 'error') {
+    ctx.fillStyle = '#666';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('Leaderboard unavailable', w / 2, h * startY);
+    return;
+  }
+
+  if (screen.leaderboardStatus !== 'done' || !screen.leaderboardData) return;
+
+  // Player rank
+  if (screen.playerRank != null) {
+    ctx.fillStyle = CONFIG.COLORS.BULL_GOLD;
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText('Your Rank: #' + screen.playerRank + ' of ' + screen.playerTotal, w / 2, h * startY);
+  }
+
+  // Top scores header
+  const tableTop = h * startY + 22;
+  ctx.fillStyle = '#999';
+  ctx.font = 'bold 12px monospace';
+  ctx.fillText('--- TOP SCORES ---', w / 2, tableTop);
+
+  // Leaderboard rows
+  const rowH = 16;
+  const data = screen.leaderboardData.slice(0, 5);
+  for (let i = 0; i < data.length; i++) {
+    const entry = data[i];
+    const y = tableTop + 18 + i * rowH;
+    const rank = (i + 1) + '.';
+    const name = entry.player_name.substring(0, 12);
+    const score = '$' + entry.score.toLocaleString();
+
+    ctx.fillStyle = i === 0 ? CONFIG.COLORS.BULL_GOLD : '#CCC';
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(rank, w / 2 - 80, y);
+    ctx.textAlign = 'left';
+    ctx.fillText(name, w / 2 - 70, y);
+    ctx.textAlign = 'right';
+    ctx.fillText(score, w / 2 + 100, y);
+    ctx.textAlign = 'center';
   }
 }

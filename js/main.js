@@ -11,10 +11,13 @@ const audio = new AudioManager();
 const particles = new ParticleSystem();
 const floatingText = new FloatingText();
 
+const leaderboard = new Leaderboard(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 let currentState = GameState.TITLE;
 let titleScreen = new TitleScreen();
 let gameOverScreen = new GameOverScreen();
 let levelCompleteScreen = new LevelCompleteScreen();
+let leaderboardPending = false; // true while waiting for name input or submission
 
 let player = null;
 let level = null;
@@ -59,6 +62,8 @@ function startGame(characterType) {
   levelTime = 0;
   deathPauseTimer = 0;
   marginCallShown = false;
+  leaderboardPending = false;
+  leaderboard.resetSession();
 
   // Wire up question block callbacks
   for (const block of level.questionBlocks) {
@@ -132,6 +137,7 @@ function updatePlaying(dt) {
         gameOverScreen.finalScore = player.score;
         gameOverScreen.bullsCollected = player.totalBullsCollected;
         currentState = GameState.GAME_OVER;
+        triggerLeaderboard(player.score, player.totalBullsCollected, levelTime, player.characterType);
       } else {
         player.respawn();
         camera.x = Math.max(0, player.x - CONFIG.VIRTUAL_WIDTH / 2);
@@ -281,6 +287,7 @@ function updatePlaying(dt) {
     levelCompleteScreen.bullsCollected = player.totalBullsCollected;
     levelCompleteScreen.timeTaken = levelTime;
     currentState = GameState.LEVEL_COMPLETE;
+    triggerLeaderboard(player.score, player.totalBullsCollected, levelTime, player.characterType);
   }
 
   // Update camera
@@ -312,8 +319,41 @@ function playerDeath(cause) {
   deathPauseTimer = cause === 'pit' ? 1.5 : 2.0;
 }
 
+function triggerLeaderboard(score, bulls, time, character) {
+  if (!leaderboard.isAvailable() || leaderboard.submittedThisSession) return;
+
+  const screen = currentState === GameState.LEVEL_COMPLETE ? levelCompleteScreen : gameOverScreen;
+  screen.leaderboardStatus = 'pending';
+  leaderboardPending = true;
+
+  const doSubmit = () => {
+    screen.leaderboardStatus = 'submitting';
+    leaderboard.submitScore(score, bulls, time, character).then(result => {
+      leaderboardPending = false;
+      if (result) {
+        screen.leaderboardData = result.leaderboard;
+        screen.playerRank = result.rank;
+        screen.playerTotal = result.total;
+        screen.leaderboardStatus = 'done';
+      } else {
+        screen.leaderboardStatus = 'error';
+      }
+    });
+  };
+
+  if (leaderboard.hasPlayerName()) {
+    doSubmit();
+  } else {
+    leaderboard.showNameInput(
+      (name) => { doSubmit(); },
+      () => { leaderboardPending = false; screen.leaderboardStatus = 'skipped'; }
+    );
+  }
+}
+
 function updateGameOver(dt) {
   gameOverScreen.update(dt);
+  if (leaderboardPending) return;
   if (input.wasPressed('Enter') || input.wasPressed('Space')) {
     titleScreen = new TitleScreen();
     currentState = GameState.TITLE;
@@ -322,6 +362,7 @@ function updateGameOver(dt) {
 
 function updateLevelComplete(dt) {
   levelCompleteScreen.update(dt);
+  if (leaderboardPending) return;
   if ((input.wasPressed('Enter') || input.wasPressed('Space')) && levelCompleteScreen.animTime > 2) {
     titleScreen = new TitleScreen();
     currentState = GameState.TITLE;
