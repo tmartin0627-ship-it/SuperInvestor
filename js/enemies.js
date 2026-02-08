@@ -273,6 +273,22 @@ class GrizzlyBear {
       ctx.globalAlpha = 1;
     }
 
+    // Armor shield indicator (stomp-immune)
+    if (!this.charging) {
+      ctx.globalAlpha = 0.3 + Math.sin(this.animTime * 3) * 0.1;
+      ctx.strokeStyle = '#88AACC';
+      ctx.lineWidth = 2;
+      // Shield diamond on chest
+      ctx.beginPath();
+      ctx.moveTo(w * 0.5, h * 0.3);
+      ctx.lineTo(w * 0.65, h * 0.45);
+      ctx.lineTo(w * 0.5, h * 0.6);
+      ctx.lineTo(w * 0.35, h * 0.45);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
     // Charge indicator
     if (this.charging) {
       ctx.fillStyle = '#FF4444';

@@ -135,6 +135,227 @@ class GreenCandle {
   }
 }
 
+class HodlItem {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.baseY = y;
+    this.width = 28;
+    this.height = 24;
+    this.collected = false;
+    this.animTime = Math.random() * Math.PI * 2;
+    this.type = 'hodlItem';
+  }
+
+  update(dt) {
+    if (this.collected) return;
+    this.animTime += dt;
+    this.y = this.baseY + Math.sin(this.animTime * 3) * 4;
+  }
+
+  render(ctx, camera) {
+    if (this.collected) return;
+    const sx = this.x - camera.x;
+    const sy = this.y - camera.y;
+    if (sx + this.width < -10 || sx > CONFIG.VIRTUAL_WIDTH + 10) return;
+
+    const w = this.width;
+    const h = this.height;
+
+    // Glow effect
+    ctx.globalAlpha = 0.25 + Math.sin(this.animTime * 4) * 0.1;
+    ctx.fillStyle = '#FF4444';
+    ctx.beginPath();
+    ctx.arc(sx + w / 2, sy + h / 2, w * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Red headband base
+    ctx.fillStyle = '#CC0000';
+    ctx.fillRect(sx + 2, sy + h * 0.35, w - 4, h * 0.3);
+
+    // Headband highlight
+    ctx.fillStyle = '#FF3333';
+    ctx.fillRect(sx + 2, sy + h * 0.35, w - 4, h * 0.12);
+
+    // HODL text on headband
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 8px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('HODL', sx + w / 2, sy + h * 0.5);
+
+    // Cat ears (RoaringKitty reference)
+    ctx.fillStyle = '#CC0000';
+    // Left ear
+    ctx.beginPath();
+    ctx.moveTo(sx + 3, sy + h * 0.38);
+    ctx.lineTo(sx + 1, sy + 2);
+    ctx.lineTo(sx + 9, sy + h * 0.38);
+    ctx.fill();
+    // Right ear
+    ctx.beginPath();
+    ctx.moveTo(sx + w - 3, sy + h * 0.38);
+    ctx.lineTo(sx + w - 1, sy + 2);
+    ctx.lineTo(sx + w - 9, sy + h * 0.38);
+    ctx.fill();
+
+    // Inner ears
+    ctx.fillStyle = '#FF8888';
+    ctx.beginPath();
+    ctx.moveTo(sx + 4, sy + h * 0.38);
+    ctx.lineTo(sx + 3, sy + 6);
+    ctx.lineTo(sx + 8, sy + h * 0.38);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(sx + w - 4, sy + h * 0.38);
+    ctx.lineTo(sx + w - 3, sy + 6);
+    ctx.lineTo(sx + w - 8, sy + h * 0.38);
+    ctx.fill();
+
+    // Trailing ribbon ends
+    ctx.strokeStyle = '#CC0000';
+    ctx.lineWidth = 2;
+    const wave = Math.sin(this.animTime * 5) * 3;
+    ctx.beginPath();
+    ctx.moveTo(sx + 2, sy + h * 0.55);
+    ctx.quadraticCurveTo(sx - 4, sy + h * 0.7 + wave, sx - 2, sy + h * 0.9);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(sx + 4, sy + h * 0.55);
+    ctx.quadraticCurveTo(sx - 2, sy + h * 0.8 - wave, sx, sy + h);
+    ctx.stroke();
+  }
+}
+
+class DividendCoin {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.baseY = y;
+    this.width = 24;
+    this.height = 24;
+    this.collected = false;
+    this.animTime = Math.random() * Math.PI * 2;
+    this.type = 'dividend';
+  }
+
+  update(dt) {
+    if (this.collected) return;
+    this.animTime += dt;
+    this.y = this.baseY + Math.sin(this.animTime * 2.5) * 5;
+  }
+
+  render(ctx, camera) {
+    if (this.collected) return;
+    const sx = this.x - camera.x;
+    const sy = this.y - camera.y;
+    if (sx + this.width < -10 || sx > CONFIG.VIRTUAL_WIDTH + 10) return;
+
+    const w = this.width;
+    const h = this.height;
+    const cx = sx + w / 2;
+    const cy = sy + h / 2;
+
+    // Bright glow
+    ctx.globalAlpha = 0.3 + Math.sin(this.animTime * 6) * 0.15;
+    ctx.fillStyle = '#00FF88';
+    ctx.beginPath();
+    ctx.arc(cx, cy, w * 0.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Coin body
+    ctx.fillStyle = '#00CC66';
+    ctx.beginPath();
+    ctx.arc(cx, cy, w * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Coin border
+    ctx.strokeStyle = '#009944';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, w * 0.45, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Dollar sign
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('$', cx, cy + 1);
+
+    // Sparkle
+    ctx.fillStyle = '#FFFFFF';
+    const sparkle = Math.sin(this.animTime * 8) * 0.5 + 0.5;
+    ctx.globalAlpha = sparkle;
+    ctx.fillRect(cx + 6, cy - 8, 3, 3);
+    ctx.fillRect(cx - 9, cy + 5, 2, 2);
+    ctx.globalAlpha = 1;
+  }
+}
+
+class RedCandle {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.baseY = y;
+    this.width = 20;
+    this.height = 36;
+    this.collected = false;
+    this.animTime = 0;
+    this.type = 'redCandle';
+    this.vy = 120; // Falls downward
+  }
+
+  update(dt) {
+    if (this.collected) return;
+    this.animTime += dt;
+    this.y += this.vy * dt;
+    // Remove if fallen off screen
+    if (this.y > CONFIG.VIRTUAL_HEIGHT + 200) {
+      this.collected = true;
+    }
+  }
+
+  render(ctx, camera) {
+    if (this.collected) return;
+    const sx = this.x - camera.x;
+    const sy = this.y - camera.y;
+    if (sx + this.width < -10 || sx > CONFIG.VIRTUAL_WIDTH + 10) return;
+    if (sy > CONFIG.VIRTUAL_HEIGHT + 10 || sy + this.height < -50) return;
+
+    // Warning glow
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = '#FF0000';
+    ctx.beginPath();
+    ctx.arc(sx + 10, sy + 18, 18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Candle body (red — bearish candle)
+    ctx.fillStyle = '#CC0000';
+    ctx.fillRect(sx + 3, sy + 8, 14, 22);
+
+    // Upper wick
+    ctx.fillStyle = '#990000';
+    ctx.fillRect(sx + 8, sy, 4, 10);
+
+    // Lower wick
+    ctx.fillRect(sx + 8, sy + 28, 4, 8);
+
+    // Highlight
+    ctx.fillStyle = 'rgba(255,100,100,0.3)';
+    ctx.fillRect(sx + 5, sy + 10, 4, 16);
+
+    // Down arrow
+    ctx.fillStyle = '#FF4444';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('\u25BC', sx + 10, sy + this.height + 10);
+  }
+}
+
 class ChargingBull {
   constructor(x, y) {
     this.x = x;

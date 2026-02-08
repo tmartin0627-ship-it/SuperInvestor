@@ -32,6 +32,7 @@ let debugMode = false;
 // Death/respawn state
 let deathPauseTimer = 0;
 let marginCallShown = false;
+let flashCrashTimer = 0;
 
 // ==========================================
 //  Canvas setup
@@ -74,15 +75,23 @@ function startGame(characterType) {
   }
 
   currentState = GameState.PLAYING;
+
+  // Try to fetch live stock data
+  fetchLiveStockData().then(stocks => {
+    if (stocks) {
+      level.tickerStocks = stocks;
+      hud.tickerStocks = stocks;
+    }
+  });
 }
 
 function spawnFromBlock(contents, x, y) {
   if (contents === 'bull') {
     level.collectibles.push(new GoldBull(x, y));
+  } else if (contents === 'hodlItem') {
+    level.collectibles.push(new HodlItem(x, y));
   } else if (contents === 'greenCandle') {
     level.collectibles.push(new GreenCandle(x, y));
-  } else if (contents === 'chargingBull') {
-    level.collectibles.push(new ChargingBull(x, y));
   }
 }
 
@@ -161,13 +170,6 @@ function updatePlaying(dt) {
     audio.playJump();
   }
 
-  // HODL mode activation
-  if (player.hodlActive && player.hodlTimer >= 5.0 && player.hodlTimer < 5.1) {
-    audio.playHodl();
-    floatingText.spawn(player.x + player.width / 2, player.y - 30,
-      'DIAMOND HANDS!', CONFIG.COLORS.BULL_GOLD, 22, 2.0);
-  }
-
   // Update question blocks
   for (const block of level.questionBlocks) {
     block.update(dt);
@@ -190,16 +192,14 @@ function updatePlaying(dt) {
       if (!enemy.alive) continue;
       if (!aabbOverlap(player, enemy)) continue;
 
-      // Check if invincible - kill enemies on contact
-      if (player.invincible) {
-        const killed = enemy.stomp();
-        if (killed) {
-          enemy.alive = false;
-          particles.bearDeath(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
-          floatingText.spawn(enemy.x + enemy.width / 2, enemy.y - 20, '+200', CONFIG.COLORS.BULL_GOLD);
-          player.score += 200;
-          audio.playStomp();
-        }
+      // Check if Diamond Hands invincible - kill ALL enemies on contact
+      if (player.invincible && player.diamondHands) {
+        enemy.hp = 0;
+        enemy.alive = false;
+        particles.bearDeath(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+        floatingText.spawn(enemy.x + enemy.width / 2, enemy.y - 20, '+200', CONFIG.COLORS.BULL_GOLD);
+        player.score += 200;
+        audio.playStomp();
         continue;
       }
 
@@ -209,18 +209,25 @@ function updatePlaying(dt) {
       const playerFalling = player.vy > 0;
 
       if (playerFalling && (playerBottom - enemyTop) < enemy.height * 0.45) {
-        // STOMP!
-        const killed = enemy.stomp();
-        player.vy = CONFIG.PLAYER_STOMP_BOUNCE;
-        audio.playStomp();
-
-        if (killed) {
-          particles.bearDeath(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
-          floatingText.spawn(enemy.x + enemy.width / 2, enemy.y - 20, '+200', CONFIG.COLORS.BULL_GOLD);
-          player.score += 200;
+        // Grizzly bears are immune to stomping
+        if (enemy instanceof GrizzlyBear) {
+          player.vy = CONFIG.PLAYER_STOMP_BOUNCE;
+          audio.playClang();
+          floatingText.spawn(enemy.x + enemy.width / 2, enemy.y - 20, 'IMMUNE!', '#FF8800', 20);
         } else {
-          floatingText.spawn(enemy.x + enemy.width / 2, enemy.y - 20, 'HIT!', CONFIG.COLORS.TICKER_RED, 18);
-          player.score += 50;
+          // STOMP baby bears
+          const killed = enemy.stomp();
+          player.vy = CONFIG.PLAYER_STOMP_BOUNCE;
+          audio.playStomp();
+
+          if (killed) {
+            particles.bearDeath(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+            floatingText.spawn(enemy.x + enemy.width / 2, enemy.y - 20, '+200', CONFIG.COLORS.BULL_GOLD);
+            player.score += 200;
+          } else {
+            floatingText.spawn(enemy.x + enemy.width / 2, enemy.y - 20, 'HIT!', CONFIG.COLORS.TICKER_RED, 18);
+            player.score += 50;
+          }
         }
       } else {
         // Side hit - player takes damage
@@ -247,29 +254,77 @@ function updatePlaying(dt) {
     c.collected = true;
 
     if (c.type === 'bull') {
-      const extraLife = player.collectBull();
+      const result = player.collectBull();
       audio.playCollect();
       particles.bullCollect(c.x + c.width / 2, c.y + c.height / 2);
       floatingText.spawn(c.x + c.width / 2, c.y - 10, '+$100', CONFIG.COLORS.BULL_GOLD, 16);
-      if (extraLife) {
-        audio.playExtraLife();
-        floatingText.spawn(player.x + player.width / 2, player.y - 40, '1UP!', CONFIG.COLORS.TICKER_GREEN, 28, 2.0);
+      if (result === 'diamondHands') {
+        audio.playDiamondHands();
+        floatingText.spawn(player.x + player.width / 2, player.y - 40,
+          'DIAMOND HANDS!', '#88DDFF', 28, 2.5);
+        particles.powerUp(player.x + player.width / 2, player.y + player.height / 2, '#88DDFF');
       }
+    } else if (c.type === 'hodlItem') {
+      player.applyPowerUp('hodlItem');
+      audio.playPowerUp();
+      particles.powerUp(c.x + c.width / 2, c.y + c.height / 2, '#FF4444');
+      floatingText.spawn(c.x + c.width / 2, c.y - 10, 'HODL!', '#FF4444', 22, 1.5);
     } else if (c.type === 'greenCandle') {
       player.applyPowerUp('greenCandle');
       audio.playPowerUp();
       particles.powerUp(c.x + c.width / 2, c.y + c.height / 2, CONFIG.COLORS.GREEN_CANDLE);
       floatingText.spawn(c.x + c.width / 2, c.y - 10, 'GREEN CANDLE!', CONFIG.COLORS.GREEN_CANDLE, 22, 1.5);
-    } else if (c.type === 'chargingBull') {
-      player.applyPowerUp('chargingBull');
-      audio.playPowerUp();
-      particles.powerUp(c.x + c.width / 2, c.y + c.height / 2, CONFIG.COLORS.BULL_GOLD);
-      floatingText.spawn(c.x + c.width / 2, c.y - 10, 'CHARGING BULL!', CONFIG.COLORS.CHARGING_BULL, 24, 2.0);
+    } else if (c.type === 'dividend') {
+      player.score += CONFIG.DIVIDEND_SCORE;
+      audio.playDividend();
+      particles.bullCollect(c.x + c.width / 2, c.y + c.height / 2);
+      floatingText.spawn(c.x + c.width / 2, c.y - 10, '+$500 DIVIDEND!', '#00FF88', 24, 2.0);
     }
   }
 
   // Remove collected items
   level.collectibles = level.collectibles.filter(c => !c.collected);
+
+  // Short Squeeze pads
+  for (const pad of level.shortSqueezePads) {
+    pad.update(dt);
+    if (!player.deathAnimating && pad.tryLaunch(player)) {
+      audio.playSuperJump();
+      floatingText.spawn(pad.x + pad.width / 2, pad.y - 20, 'SHORT SQUEEZE!', '#00FF88', 20, 1.5);
+      particles.powerUp(pad.x + pad.width / 2, pad.y, '#00FF88');
+    }
+  }
+
+  // Red Candle falling hazards
+  level.redCandleTimer = (level.redCandleTimer || 0) + dt;
+  if (level.redCandleTimer >= 2.0) {
+    level.redCandleTimer = 0;
+    for (const zone of level.redCandleZones) {
+      // Only spawn if player is within range of the zone
+      if (Math.abs(player.x - zone.x - zone.width / 2) < CONFIG.VIRTUAL_WIDTH) {
+        const rx = zone.x + Math.random() * zone.width;
+        level.collectibles.push(new RedCandle(rx, player.y - CONFIG.VIRTUAL_HEIGHT / 2 - 50));
+      }
+    }
+  }
+
+  // Player vs red candles
+  for (let i = level.collectibles.length - 1; i >= 0; i--) {
+    const c = level.collectibles[i];
+    if (c.type !== 'redCandle' || c.collected) continue;
+    if (!player.deathAnimating && aabbOverlap(player, c)) {
+      c.collected = true;
+      const died = player.takeDamage();
+      if (died) {
+        playerDeath('enemy');
+      } else {
+        audio.playDamage();
+        floatingText.spawn(player.x + player.width / 2, player.y - 20, 'RED CANDLE!', '#FF4444', 20);
+        player.vx = (player.x < c.x) ? -150 : 150;
+        player.vy = -150;
+      }
+    }
+  }
 
   // Pit death
   if (!player.deathAnimating && player.y > CONFIG.VIRTUAL_HEIGHT + 50) {
@@ -307,6 +362,7 @@ function updatePlaying(dt) {
 }
 
 function playerDeath(cause) {
+  flashCrashTimer = 0.3;
   if (cause === 'pit' && !marginCallShown) {
     marginCallShown = true;
     audio.playMarginCall();
@@ -436,6 +492,11 @@ function renderPlaying() {
   // Golden Briefcase (goal)
   renderGoldenBriefcase(ctx, camera, level.goalPosition, gameTime);
 
+  // Short Squeeze pads
+  for (const pad of level.shortSqueezePads) {
+    pad.render(ctx, camera);
+  }
+
   // Collectibles
   for (const c of level.collectibles) {
     c.render(ctx, camera);
@@ -452,6 +513,21 @@ function renderPlaying() {
   // Particles and floating text
   particles.render(ctx, camera);
   floatingText.render(ctx, camera);
+
+  // Flash Crash death effect
+  if (flashCrashTimer > 0) {
+    flashCrashTimer -= FIXED_DT;
+    ctx.globalAlpha = Math.min(flashCrashTimer * 2, 0.5);
+    ctx.fillStyle = '#FF0000';
+    ctx.fillRect(0, 0, CONFIG.VIRTUAL_WIDTH, CONFIG.VIRTUAL_HEIGHT);
+    ctx.globalAlpha = Math.min(flashCrashTimer * 3, 1);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 48px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('FLASH CRASH', CONFIG.VIRTUAL_WIDTH / 2, CONFIG.VIRTUAL_HEIGHT / 2);
+    ctx.globalAlpha = 1;
+  }
 
   // HUD (screen space)
   hud.render(ctx, player, CONFIG.VIRTUAL_WIDTH);
@@ -513,6 +589,48 @@ function renderDebug() {
     ' | Enemies: ' + level.enemies.length +
     ' | Bulls: ' + level.collectibles.length, 10, CONFIG.VIRTUAL_HEIGHT - 16);
 }
+
+// ==========================================
+//  Live Stock Ticker (Dow 30)
+// ==========================================
+async function fetchLiveStockData() {
+  const DOW30 = ['AAPL','MSFT','AMGN','AXP','BA','CAT','CRM','CSCO','CVX','DIS',
+    'GS','HD','HON','IBM','JNJ','JPM','KO','MCD','MMM','MRK',
+    'NKE','PG','TRV','UNH','V','VZ','WBA','WMT','DOW','INTC'];
+
+  try {
+    // Try Yahoo Finance via CORS proxy
+    const symbols = DOW30.join(',');
+    const url = 'https://api.allorigins.win/get?url=' +
+      encodeURIComponent('https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + symbols + '&fields=symbol,regularMarketPrice,regularMarketChangePercent');
+
+    const resp = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    const json = await resp.json();
+    const data = JSON.parse(json.contents);
+
+    if (data.quoteResponse && data.quoteResponse.result) {
+      const stocks = data.quoteResponse.result.map(q => ({
+        symbol: q.symbol,
+        price: q.regularMarketPrice || 0,
+        change: q.regularMarketChangePercent || 0
+      }));
+      if (stocks.length > 10) {
+        return stocks;
+      }
+    }
+  } catch (e) {
+    console.warn('Live stock data unavailable, using fallback:', e.message);
+  }
+  return null; // Use fallback data from level
+}
+
+// Try to load live data on page load
+fetchLiveStockData().then(stocks => {
+  if (stocks && level) {
+    level.tickerStocks = stocks;
+    if (hud) hud.tickerStocks = stocks;
+  }
+});
 
 // ==========================================
 //  Game Loop

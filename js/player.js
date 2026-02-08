@@ -20,8 +20,8 @@ class Player {
     this.invincibleTimer = 0;
     this.damageInvTimer = 0;
     this.alive = true;
-    this.hodlTimer = 0;
-    this.hodlActive = false;
+    this.hasHeadband = false;
+    this.diamondHands = false;
 
     // Crouch state
     this.crouching = false;
@@ -60,7 +60,7 @@ class Player {
     // === JUMP (check BEFORE crouch so releasing down + jumping on same frame still works) ===
     this.jumpedThisFrame = false;
     this.superJumpedThisFrame = false;
-    if (input.jump && this.onGround && !this.hodlActive) {
+    if (input.jump && this.onGround) {
       if (this.superJumpReady) {
         // SUPER JUMP from crouch!
         this.vy = CONFIG.PLAYER_SUPER_JUMP_VELOCITY;
@@ -84,12 +84,11 @@ class Player {
       this.crouchTimer = 0;
       this.superJumpReady = false;
       this.onGround = false;
-      this.hodlTimer = 0;
     }
 
     // === CROUCH ===
     if (!this.crouching && !this.superJumpReady) {
-      const wantsCrouch = input.down && this.onGround && !this.hodlActive;
+      const wantsCrouch = input.down && this.onGround;
       if (wantsCrouch) {
         // Start crouching — shrink hitbox, keep feet on the ground
         this.crouching = true;
@@ -122,38 +121,18 @@ class Player {
                    : this.crouching ? CONFIG.PLAYER_RUN_SPEED * 0.3
                    : CONFIG.PLAYER_RUN_SPEED;
 
-    if (input.left && !this.hodlActive) {
+    if (input.left) {
       this.vx -= accel * dt;
       this.facingRight = false;
-      this.hodlTimer = 0;
-    } else if (input.right && !this.hodlActive) {
+    } else if (input.right) {
       this.vx += accel * dt;
       this.facingRight = true;
-      this.hodlTimer = 0;
     } else {
       this.vx *= CONFIG.GROUND_FRICTION;
       if (Math.abs(this.vx) < 5) this.vx = 0;
     }
 
     this.vx = Math.clamp(this.vx, -maxSpeed, maxSpeed);
-
-    // === HODL Easter egg ===
-    if (this.vx === 0 && this.onGround && !input.left && !input.right && !input.jump && !input.down) {
-      this.hodlTimer += dt;
-      if (this.hodlTimer >= 5.0 && !this.hodlActive && !this.invincible) {
-        this.hodlActive = true;
-        this.invincible = true;
-        this.invincibleTimer = Infinity;
-      }
-    }
-    if (this.hodlActive && (input.left || input.right || input.jump)) {
-      this.hodlActive = false;
-      if (this.invincibleTimer === Infinity) {
-        this.invincible = false;
-        this.invincibleTimer = 0;
-      }
-      this.hodlTimer = 0;
-    }
 
     // === PHYSICS ===
     applyGravity(this, dt);
@@ -166,10 +145,11 @@ class Player {
     }
 
     // Update invincibility timers
-    if (this.invincibleTimer > 0 && this.invincibleTimer !== Infinity) {
+    if (this.invincibleTimer > 0) {
       this.invincibleTimer -= dt;
       if (this.invincibleTimer <= 0) {
         this.invincible = false;
+        this.diamondHands = false;
         this.invincibleTimer = 0;
       }
     }
@@ -185,8 +165,6 @@ class Player {
       this.state = this.superJumpReady ? 'crouch_ready' : 'crouching';
     } else if (Math.abs(this.vx) > 10) {
       this.state = 'running';
-    } else if (this.hodlActive) {
-      this.state = 'hodl';
     } else {
       this.state = 'idle';
     }
@@ -218,6 +196,11 @@ class Player {
 
   takeDamage() {
     if (this.invincible || this.damageInvTimer > 0) return false;
+    if (this.hasHeadband) {
+      this.hasHeadband = false;
+      this.damageInvTimer = CONFIG.PLAYER_INVINCIBILITY_TIME;
+      return false;
+    }
     if (this.powered) {
       this.powered = false;
       this.width = CONFIG.PLAYER_WIDTH;
@@ -253,16 +236,21 @@ class Player {
     this.superJumpReady = false;
     this.width = CONFIG.PLAYER_WIDTH;
     this.height = CONFIG.PLAYER_HEIGHT;
+    this.hasHeadband = false;
+    this.diamondHands = false;
+    this.invincible = false;
+    this.invincibleTimer = 0;
+    this.powered = false;
   }
 
   collectBull() {
     this.bullsCollected++;
     this.totalBullsCollected++;
     this.score += CONFIG.BULL_SCORE;
-    if (this.bullsCollected >= CONFIG.BULLS_FOR_EXTRA_LIFE) {
-      this.bullsCollected -= CONFIG.BULLS_FOR_EXTRA_LIFE;
-      this.lives++;
-      return true;
+    if (this.bullsCollected >= CONFIG.BULLS_FOR_DIAMOND_HANDS) {
+      this.bullsCollected = 0;
+      this.activateDiamondHands();
+      return 'diamondHands';
     }
     return false;
   }
@@ -276,11 +264,15 @@ class Player {
         this.width = CONFIG.PLAYER_POWERED_WIDTH;
         this.height = newHeight;
       }
-    } else if (type === 'chargingBull') {
-      this.invincible = true;
-      this.invincibleTimer = CONFIG.INVINCIBILITY_DURATION;
-      this.hodlActive = false;
+    } else if (type === 'hodlItem') {
+      this.hasHeadband = true;
     }
+  }
+
+  activateDiamondHands() {
+    this.invincible = true;
+    this.diamondHands = true;
+    this.invincibleTimer = CONFIG.DIAMOND_HANDS_DURATION;
   }
 
   render(ctx, camera) {
@@ -293,33 +285,58 @@ class Player {
 
     ctx.save();
 
-    // Invincibility glow
-    if (this.invincible) {
+    // Diamond Hands invincibility glow
+    if (this.diamondHands) {
+      // Diamond-shaped sparkling aura
+      const cx = screenX + this.width / 2;
+      const cy = screenY + this.height / 2;
+      const auraSize = this.width * 1.1;
+
+      // Outer diamond glow
+      ctx.globalAlpha = 0.25 + Math.sin(this.animTime * 8) * 0.1;
+      ctx.fillStyle = '#88DDFF';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - auraSize);
+      ctx.lineTo(cx + auraSize * 0.7, cy);
+      ctx.lineTo(cx, cy + auraSize);
+      ctx.lineTo(cx - auraSize * 0.7, cy);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Sparkle particles around player
+      for (let i = 0; i < 6; i++) {
+        const angle = this.animTime * 3 + i * (Math.PI * 2 / 6);
+        const dist = this.width * 0.8 + Math.sin(this.animTime * 5 + i) * 5;
+        const px = cx + Math.cos(angle) * dist;
+        const py = cy + Math.sin(angle) * dist * 0.7;
+        ctx.globalAlpha = 0.6 + Math.sin(this.animTime * 10 + i * 2) * 0.4;
+        ctx.fillStyle = '#FFFFFF';
+        // Diamond shape sparkle
+        ctx.beginPath();
+        ctx.moveTo(px, py - 3);
+        ctx.lineTo(px + 2, py);
+        ctx.lineTo(px, py + 3);
+        ctx.lineTo(px - 2, py);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Rainbow cycle border
+      const hue = (this.animTime * 200) % 360;
+      ctx.globalAlpha = 0.2;
+      ctx.fillStyle = 'hsl(' + hue + ', 100%, 70%)';
+      ctx.fillRect(screenX - 2, screenY - 2, this.width + 4, this.height + 4);
+      ctx.globalAlpha = 1;
+    } else if (this.invincible) {
+      // Generic invincibility glow (fallback)
       ctx.globalAlpha = 0.3;
       ctx.fillStyle = CONFIG.COLORS.BULL_GOLD;
       ctx.beginPath();
       ctx.arc(screenX + this.width / 2, screenY + this.height / 2, this.width * 0.9, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
-
-      const hue = (this.animTime * 200) % 360;
-      ctx.globalAlpha = 0.15;
-      ctx.fillStyle = 'hsl(' + hue + ', 100%, 60%)';
-      ctx.fillRect(screenX - 2, screenY - 2, this.width + 4, this.height + 4);
-      ctx.globalAlpha = 1;
-    }
-
-    // HODL mode visual
-    if (this.hodlActive) {
-      ctx.fillStyle = 'rgba(0,255,136,0.2)';
-      ctx.beginPath();
-      ctx.arc(screenX + this.width / 2, screenY + this.height / 2, this.width, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = CONFIG.COLORS.TICKER_GREEN;
-      ctx.font = 'bold 14px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('HODL', screenX + this.width / 2, screenY - 12);
     }
 
     // Super jump ready indicator
@@ -470,6 +487,31 @@ class Player {
     ctx.arc(w * 0.5, h * 0.22, 5, 0.1, Math.PI - 0.1);
     ctx.stroke();
 
+    if (this.hasHeadband) {
+      // Red headband on forehead
+      ctx.fillStyle = '#CC0000';
+      ctx.fillRect(w * 0.15, h * 0.08, w * 0.7, h * 0.05);
+      // Cat ears
+      ctx.beginPath();
+      ctx.moveTo(w * 0.2, h * 0.1);
+      ctx.lineTo(w * 0.15, h * 0.0);
+      ctx.lineTo(w * 0.3, h * 0.08);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(w * 0.7, h * 0.08);
+      ctx.lineTo(w * 0.85, h * 0.0);
+      ctx.lineTo(w * 0.8, h * 0.1);
+      ctx.fill();
+      // Trailing ribbons
+      ctx.strokeStyle = '#CC0000';
+      ctx.lineWidth = 1.5;
+      const wave = Math.sin(this.animTime * 6) * 3;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.15, h * 0.1);
+      ctx.quadraticCurveTo(w * 0.05, h * 0.18 + wave, w * 0.08, h * 0.25);
+      ctx.stroke();
+    }
+
     if (this.powered) {
       ctx.fillStyle = 'rgba(0,204,102,0.15)';
       ctx.fillRect(0, 0, w, h);
@@ -599,6 +641,31 @@ class Player {
     ctx.beginPath();
     ctx.arc(w * 0.5, h * 0.22, 4, 0.1, Math.PI - 0.1);
     ctx.stroke();
+
+    if (this.hasHeadband) {
+      // Red headband on forehead
+      ctx.fillStyle = '#CC0000';
+      ctx.fillRect(w * 0.15, h * 0.08, w * 0.7, h * 0.05);
+      // Cat ears (over hair)
+      ctx.beginPath();
+      ctx.moveTo(w * 0.2, h * 0.1);
+      ctx.lineTo(w * 0.15, h * 0.0);
+      ctx.lineTo(w * 0.3, h * 0.08);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(w * 0.7, h * 0.08);
+      ctx.lineTo(w * 0.85, h * 0.0);
+      ctx.lineTo(w * 0.8, h * 0.1);
+      ctx.fill();
+      // Trailing ribbons
+      ctx.strokeStyle = '#CC0000';
+      ctx.lineWidth = 1.5;
+      const wave = Math.sin(this.animTime * 6) * 3;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.15, h * 0.1);
+      ctx.quadraticCurveTo(w * 0.05, h * 0.18 + wave, w * 0.08, h * 0.25);
+      ctx.stroke();
+    }
 
     if (this.powered) {
       ctx.fillStyle = 'rgba(0,204,102,0.15)';

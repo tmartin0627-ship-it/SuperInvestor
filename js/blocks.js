@@ -150,3 +150,82 @@ class QuestionBlock {
     }
   }
 }
+
+class ShortSqueezePad {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.width = 48;
+    this.height = 16;
+    this.animTime = 0;
+    this.cooldown = 0;
+    this.activated = false;
+    this.activateTimer = 0;
+  }
+
+  update(dt) {
+    this.animTime += dt;
+    if (this.cooldown > 0) this.cooldown -= dt;
+    if (this.activateTimer > 0) {
+      this.activateTimer -= dt;
+      if (this.activateTimer <= 0) this.activated = false;
+    }
+  }
+
+  tryLaunch(player) {
+    if (this.cooldown > 0) return false;
+    if (player.onGround &&
+        player.x + player.width > this.x &&
+        player.x < this.x + this.width &&
+        Math.abs((player.y + player.height) - this.y) < 8) {
+      player.vy = CONFIG.PLAYER_SUPER_JUMP_VELOCITY * 1.3;
+      player.onGround = false;
+      this.cooldown = 0.5;
+      this.activated = true;
+      this.activateTimer = 0.4;
+      return true;
+    }
+    return false;
+  }
+
+  render(ctx, camera) {
+    const sx = this.x - camera.x;
+    const sy = this.y - camera.y;
+    if (sx + this.width < -10 || sx > CONFIG.VIRTUAL_WIDTH + 10) return;
+
+    const w = this.width;
+    const h = this.height;
+
+    // Pad base
+    const glow = this.activated ? 1 : 0.6 + Math.sin(this.animTime * 4) * 0.2;
+    ctx.globalAlpha = glow;
+    ctx.fillStyle = '#00CC66';
+    ctx.fillRect(sx, sy, w, h);
+
+    // Border
+    ctx.strokeStyle = '#009944';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(sx + 1, sy + 1, w - 2, h - 2);
+
+    // Up arrow
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.moveTo(sx + w / 2, sy + 2);
+    ctx.lineTo(sx + w / 2 + 8, sy + h - 2);
+    ctx.lineTo(sx + w / 2 - 8, sy + h - 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Activation burst
+    if (this.activated) {
+      ctx.globalAlpha = this.activateTimer;
+      ctx.fillStyle = '#00FF88';
+      for (let i = 0; i < 3; i++) {
+        const by = sy - 10 - i * 12 - (0.4 - this.activateTimer) * 60;
+        ctx.fillRect(sx + w / 2 - 2 + (i - 1) * 8, by, 4, 8);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+}

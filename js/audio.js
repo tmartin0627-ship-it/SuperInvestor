@@ -110,4 +110,27 @@ class AudioManager {
     this._playTone(200, 0.2, 'sawtooth', 0.15, 0.1);
     this._playTone(100, 0.4, 'sawtooth', 0.12, 0.2);
   }
+
+  playClang() {
+    this._playTone(800, 0.05, 'square', 0.15);
+    this._playTone(600, 0.08, 'triangle', 0.12, 0.03);
+    this._playTone(400, 0.1, 'triangle', 0.08, 0.06);
+  }
+
+  playDiamondHands() {
+    const notes = [523, 659, 784, 1047, 1319, 1568];
+    notes.forEach((freq, i) => {
+      this._playTone(freq, 0.12, 'sine', 0.12, i * 0.06);
+    });
+    this._playTone(523, 0.6, 'sine', 0.06, 0.4);
+    this._playTone(784, 0.6, 'sine', 0.06, 0.4);
+    this._playTone(1047, 0.6, 'sine', 0.06, 0.4);
+  }
+
+  playDividend() {
+    this._playTone(1200, 0.06, 'sine', 0.12);
+    this._playTone(1600, 0.06, 'sine', 0.1, 0.04);
+    this._playTone(2000, 0.1, 'sine', 0.08, 0.08);
+    this._playTone(1600, 0.15, 'triangle', 0.06, 0.12);
+  }
 }

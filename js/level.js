@@ -12,22 +12,38 @@ const LEVEL_1 = {
   playerStart: { x: 96, y: 370 },
   goalPosition: { x: 9300, y: 380 },
 
-  // Stock ticker entries
+  // Dow 30 stock ticker — fallback data (overridden by live API fetch if available)
   tickerStocks: [
-    { symbol: 'YOLO', price: 420.69, change: 12.5 },
-    { symbol: 'HODL', price: 1337.00, change: -4.2 },
-    { symbol: 'FOMO', price: 99.99, change: 8.1 },
-    { symbol: 'MOON', price: 256.00, change: 42.0 },
-    { symbol: 'DOGE', price: 0.69, change: 100.0 },
-    { symbol: 'BRUH', price: 13.37, change: -15.3 },
-    { symbol: 'NGMI', price: 0.01, change: -99.0 },
-    { symbol: 'WAGMI', price: 888.88, change: 25.5 },
-    { symbol: 'CHAD', price: 9001.00, change: 0.1 },
-    { symbol: 'REKT', price: 0.00, change: -100.0 },
-    { symbol: 'APE', price: 42.00, change: 69.0 },
-    { symbol: 'STNK', price: 123.45, change: -7.8 },
-    { symbol: 'PUMP', price: 777.77, change: 33.3 },
-    { symbol: 'DUMP', price: 1.23, change: -88.8 },
+    { symbol: 'AAPL', price: 232.47, change: 1.2 },
+    { symbol: 'MSFT', price: 415.30, change: 0.8 },
+    { symbol: 'AMGN', price: 313.55, change: -0.4 },
+    { symbol: 'AXP', price: 298.10, change: 1.5 },
+    { symbol: 'BA', price: 178.42, change: -1.1 },
+    { symbol: 'CAT', price: 362.80, change: 0.6 },
+    { symbol: 'CRM', price: 332.15, change: 1.9 },
+    { symbol: 'CSCO', price: 58.73, change: 0.3 },
+    { symbol: 'CVX', price: 155.60, change: -0.7 },
+    { symbol: 'DIS', price: 112.88, change: 2.1 },
+    { symbol: 'GS', price: 598.45, change: 0.9 },
+    { symbol: 'HD', price: 388.20, change: -0.3 },
+    { symbol: 'HON', price: 210.35, change: 0.4 },
+    { symbol: 'IBM', price: 228.90, change: 1.1 },
+    { symbol: 'JNJ', price: 152.44, change: -0.2 },
+    { symbol: 'JPM', price: 252.68, change: 1.3 },
+    { symbol: 'KO', price: 61.35, change: 0.5 },
+    { symbol: 'MCD', price: 295.80, change: -0.6 },
+    { symbol: 'MMM', price: 135.22, change: 2.4 },
+    { symbol: 'MRK', price: 99.15, change: -1.8 },
+    { symbol: 'NKE', price: 71.50, change: -2.3 },
+    { symbol: 'PG', price: 168.92, change: 0.7 },
+    { symbol: 'TRV', price: 258.40, change: 1.0 },
+    { symbol: 'UNH', price: 528.75, change: -0.5 },
+    { symbol: 'V', price: 318.60, change: 1.4 },
+    { symbol: 'VZ', price: 40.88, change: 0.2 },
+    { symbol: 'WBA', price: 10.25, change: -3.5 },
+    { symbol: 'WMT', price: 92.44, change: 0.8 },
+    { symbol: 'DOW', price: 42.30, change: -1.2 },
+    { symbol: 'INTC', price: 20.15, change: -2.8 },
   ],
 
   // Ground segments: { x, width } - gaps between segments are pits
@@ -131,30 +147,30 @@ const LEVEL_1 = {
   questionBlocks: [
     // Tutorial — floating above the ground path
     { x: 300, y: 280, contents: 'bull' },
-    { x: 348, y: 280, contents: 'bull' },
-    { x: 396, y: 280, contents: 'greenCandle' },
+    { x: 356, y: 280, contents: 'bull' },
+    { x: 412, y: 280, contents: 'hodlItem' },
 
     // Above elevated platform area
     { x: 620, y: 190, contents: 'bull' },
 
     // Section 2
     { x: 1900, y: 240, contents: 'bull' },
-    { x: 1948, y: 240, contents: 'bull' },
-    { x: 2150, y: 180, contents: 'greenCandle' },
+    { x: 1956, y: 240, contents: 'bull' },
+    { x: 2150, y: 180, contents: 'hodlItem' },
 
     // Challenge area
     { x: 4050, y: 240, contents: 'bull' },
-    { x: 4098, y: 240, contents: 'bull' },
-    { x: 4146, y: 240, contents: 'chargingBull' },
+    { x: 4106, y: 240, contents: 'bull' },
+    { x: 4162, y: 240, contents: 'hodlItem' },
 
     // Peak difficulty reward
-    { x: 7000, y: 180, contents: 'greenCandle' },
+    { x: 7000, y: 180, contents: 'hodlItem' },
 
     // Victory run
     { x: 8050, y: 250, contents: 'bull' },
-    { x: 8098, y: 250, contents: 'bull' },
+    { x: 8106, y: 250, contents: 'bull' },
     { x: 8550, y: 240, contents: 'bull' },
-    { x: 9150, y: 220, contents: 'chargingBull' },
+    { x: 9150, y: 220, contents: 'bull' },
   ],
 
   // Enemies on ground: y should be groundY - enemyHeight
@@ -197,6 +213,29 @@ const LEVEL_1 = {
     { type: 'baby', x: 620, y: 254, patrolLeft: 600, patrolRight: 744 },
     { type: 'baby', x: 4220, y: 244, patrolLeft: 4200, patrolRight: 4320 },
     { type: 'baby', x: 8220, y: 264, patrolLeft: 8200, patrolRight: 8344 },
+  ],
+
+  // Short Squeeze jump pads: { x, y } — placed on ground level (y=432-16=416)
+  shortSqueezePads: [
+    { x: 1470, y: 416 },   // Before pit 1 — helps clear it
+    { x: 3570, y: 416 },   // Before pit 3 — reach high platform
+    { x: 5200, y: 416 },   // Before pit 4 area
+    { x: 7650, y: 416 },   // Before pit 7 — launch into victory run
+  ],
+
+  // Red Candle danger zones: { x, width } — red candles fall periodically in these areas
+  redCandleZones: [
+    { x: 2900, width: 400 },   // Section 3 danger
+    { x: 4600, width: 500 },   // Challenge area danger
+    { x: 6700, width: 400 },   // Peak difficulty danger
+  ],
+
+  // Dividend bonus coins: rare high-value collectibles (500pts each)
+  dividendCoins: [
+    { x: 900, y: 200 },    // High above tutorial area — hard to reach
+    { x: 3330, y: 190 },   // Above high ledge in section 3
+    { x: 4480, y: 180 },   // Above high ledge in challenge area
+    { x: 7180, y: 180 },   // Peak difficulty high reward
   ],
 
   // Collectible bulls: floating at various heights
@@ -282,6 +321,9 @@ function loadLevel(levelData) {
     questionBlocks: [],
     enemies: [],
     collectibles: [],
+    shortSqueezePads: [],
+    redCandleZones: levelData.redCandleZones || [],
+    redCandleTimer: 0,
     goalPosition: { ...levelData.goalPosition },
     tickerStocks: levelData.tickerStocks,
     name: levelData.name,
@@ -320,6 +362,20 @@ function loadLevel(levelData) {
   // Add collectible bulls
   for (const b of levelData.bulls) {
     level.collectibles.push(new GoldBull(b.x, b.y));
+  }
+
+  // Add dividend coins
+  if (levelData.dividendCoins) {
+    for (const d of levelData.dividendCoins) {
+      level.collectibles.push(new DividendCoin(d.x, d.y));
+    }
+  }
+
+  // Add short squeeze pads
+  if (levelData.shortSqueezePads) {
+    for (const pad of levelData.shortSqueezePads) {
+      level.shortSqueezePads.push(new ShortSqueezePad(pad.x, pad.y));
+    }
   }
 
   return level;

@@ -84,26 +84,40 @@ class HUD {
     }
     ctx.fillText(livesText, panelX + 8, panelY + 26);
 
-    // Bull counter
+    // Bull counter — progress toward Diamond Hands (20 bulls)
     ctx.fillStyle = CONFIG.COLORS.BULL_GOLD;
     ctx.font = '13px monospace';
-    const bullBar = '\u25A0'.repeat(player.bullsCollected) +
-                    '\u25A1'.repeat(CONFIG.BULLS_FOR_EXTRA_LIFE - player.bullsCollected);
-    ctx.fillText('BULLS: ' + bullBar, panelX + 8, panelY + 46);
+    const target = CONFIG.BULLS_FOR_DIAMOND_HANDS;
+    const barLen = 10;
+    const filled = Math.round((player.bullsCollected / target) * barLen);
+    const bullBar = '\u25A0'.repeat(filled) + '\u25A1'.repeat(barLen - filled);
+    ctx.fillText(bullBar + ' ' + player.bullsCollected + '/' + target, panelX + 8, panelY + 46);
 
     // Power-up indicators (right side)
+    let indicatorY = panelY + 6;
+
+    if (player.hasHeadband) {
+      ctx.fillStyle = '#FF4444';
+      ctx.font = 'bold 13px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('\u2660 HODL HEADBAND', canvasWidth - 12, indicatorY);
+      indicatorY += 18;
+    }
+
     if (player.powered) {
       ctx.fillStyle = CONFIG.COLORS.GREEN_CANDLE;
       ctx.font = 'bold 13px monospace';
       ctx.textAlign = 'right';
-      ctx.fillText('\u25B2 POWERED UP', canvasWidth - 12, panelY + 6);
+      ctx.fillText('\u25B2 POWERED UP', canvasWidth - 12, indicatorY);
+      indicatorY += 18;
     }
-    if (player.invincible && !player.hodlActive) {
-      ctx.fillStyle = CONFIG.COLORS.CHARGING_BULL;
+
+    if (player.diamondHands) {
+      ctx.fillStyle = '#88DDFF';
       ctx.font = 'bold 13px monospace';
       ctx.textAlign = 'right';
-      const timeLeft = player.invincibleTimer === Infinity ? '' : ' ' + Math.ceil(player.invincibleTimer) + 's';
-      ctx.fillText('\u2605 BULL MODE' + timeLeft, canvasWidth - 12, panelY + 24);
+      const timeLeft = ' ' + Math.ceil(player.invincibleTimer) + 's';
+      ctx.fillText('\u25C6 DIAMOND HANDS' + timeLeft, canvasWidth - 12, indicatorY);
     }
   }
 }
