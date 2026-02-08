@@ -26,8 +26,15 @@ class TitleScreen {
     if (this.phase === 'title') {
       if (input.wasPressed('Enter') || input.wasPressed('Space')) {
         this.phase = 'select';
+        this.selectDebounce = 0.3; // prevent instant confirmation on touch
       }
     } else {
+      // Debounce prevents the same tap that entered select phase from also confirming
+      if (this.selectDebounce > 0) {
+        this.selectDebounce -= dt;
+        return null;
+      }
+
       if (input.wasPressed('ArrowLeft') || input.wasPressed('KeyA')) {
         this.hoverIndex = 0;
       }
@@ -124,13 +131,19 @@ class TitleScreen {
       if (Math.floor(this.animTime * 2) % 2 === 0) {
         ctx.fillStyle = CONFIG.COLORS.WHITE;
         ctx.font = '22px sans-serif';
-        ctx.fillText('Press ENTER to Start', w / 2, h * 0.55);
+        const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        ctx.fillText(isMobile ? 'Tap to Start' : 'Press ENTER to Start', w / 2, h * 0.55);
       }
 
       // Controls hint
       ctx.fillStyle = '#555';
       ctx.font = '14px sans-serif';
-      ctx.fillText('Arrow Keys / WASD to move  |  Space to jump  |  Down to crouch + super jump', w / 2, h * 0.65);
+      const isMobile2 = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      if (isMobile2) {
+        ctx.fillText('Left side = Move  |  Right side: Tap = Jump, Hold = Crouch + Super Jump', w / 2, h * 0.65);
+      } else {
+        ctx.fillText('Arrow Keys / WASD to move  |  Space to jump  |  Down to crouch + super jump', w / 2, h * 0.65);
+      }
     } else {
       // Character select
       ctx.fillStyle = CONFIG.COLORS.WHITE;
@@ -172,7 +185,8 @@ class TitleScreen {
       // Instruction
       ctx.fillStyle = CONFIG.COLORS.WHITE;
       ctx.font = '16px sans-serif';
-      ctx.fillText('Press ENTER to confirm', w / 2, h * 0.88);
+      const isMobileSelect = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      ctx.fillText(isMobileSelect ? 'Tap to confirm' : 'Press ENTER to confirm', w / 2, h * 0.88);
     }
 
     // Loading tip at bottom
@@ -287,7 +301,8 @@ class GameOverScreen {
     if (Math.floor(this.animTime * 1.5) % 2 === 0) {
       ctx.fillStyle = '#AAA';
       ctx.font = '20px sans-serif';
-      ctx.fillText('Press ENTER to try again', w / 2, h * 0.82);
+      const isMobileGO = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      ctx.fillText(isMobileGO ? 'Tap to try again' : 'Press ENTER to try again', w / 2, h * 0.82);
     }
 
     // Disclaimer
@@ -361,7 +376,8 @@ class LevelCompleteScreen {
       if (Math.floor(this.animTime * 1.5) % 2 === 0) {
         ctx.fillStyle = '#AAA';
         ctx.font = '20px sans-serif';
-        ctx.fillText('Press ENTER to play again', w / 2, h * 0.82);
+        const isMobileLC = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        ctx.fillText(isMobileLC ? 'Tap to play again' : 'Press ENTER to play again', w / 2, h * 0.82);
       }
     }
 
