@@ -78,8 +78,8 @@ const LEVEL_1 = {
   platforms: [
     // == TUTORIAL AREA (0-1500) ==
     // Elevated platforms to teach jumping — off to the side of the main path
-    { x: 350, y: 340, w: 144, h: 16, type: 'desk' },
-    { x: 600, y: 290, w: 144, h: 16, type: 'desk' },
+    { x: 460, y: 340, w: 144, h: 16, type: 'desk' },
+    { x: 668, y: 290, w: 144, h: 16, type: 'desk' },
     { x: 880, y: 240, w: 96, h: 16, type: 'ledge' },
     { x: 1150, y: 310, w: 144, h: 16, type: 'desk' },
 
@@ -88,8 +88,8 @@ const LEVEL_1 = {
     { x: 1520, y: 390, w: 96, h: 16, type: 'taxi' },
 
     // == SECTION 2 (1644-2640) ==
-    { x: 1800, y: 340, w: 144, h: 16, type: 'desk' },
-    { x: 2050, y: 280, w: 120, h: 16, type: 'ledge' },
+    { x: 2004, y: 340, w: 144, h: 16, type: 'desk' },
+    { x: 2198, y: 280, w: 120, h: 16, type: 'ledge' },
     { x: 2300, y: 320, w: 144, h: 16, type: 'desk' },
 
     // == OVER PIT 2 ==
@@ -105,8 +105,8 @@ const LEVEL_1 = {
     { x: 3630, y: 370, w: 120, h: 16, type: 'taxi' },
 
     // == SECTION 4: CHALLENGE (3792-5100) ==
-    { x: 3950, y: 340, w: 144, h: 16, type: 'desk' },
-    { x: 4200, y: 280, w: 120, h: 16, type: 'ledge' },
+    { x: 4210, y: 340, w: 144, h: 16, type: 'desk' },
+    { x: 4210, y: 280, w: 120, h: 16, type: 'ledge' },
     { x: 4450, y: 220, w: 144, h: 16, type: 'ledge' },
     { x: 4700, y: 310, w: 120, h: 16, type: 'desk' },
     { x: 4950, y: 260, w: 96, h: 16, type: 'ledge' },
@@ -125,7 +125,7 @@ const LEVEL_1 = {
 
     // == SECTION 6: PEAK DIFFICULTY ==
     { x: 6750, y: 340, w: 96, h: 16, type: 'ledge' },
-    { x: 6950, y: 280, w: 72, h: 16, type: 'ledge' },
+    { x: 7048, y: 280, w: 72, h: 16, type: 'ledge' },
     { x: 7150, y: 220, w: 96, h: 16, type: 'ledge' },
     { x: 7350, y: 300, w: 72, h: 16, type: 'desk' },
 
@@ -133,11 +133,11 @@ const LEVEL_1 = {
     { x: 7550, y: 370, w: 120, h: 16, type: 'taxi' },
 
     // == SECTION 7: VICTORY RUN ==
-    { x: 7900, y: 350, w: 192, h: 16, type: 'desk' },
+    { x: 8154, y: 350, w: 192, h: 16, type: 'desk' },
     { x: 8200, y: 300, w: 144, h: 16, type: 'ledge' },
-    { x: 8500, y: 340, w: 192, h: 16, type: 'desk' },
+    { x: 8598, y: 340, w: 192, h: 16, type: 'desk' },
     { x: 8800, y: 280, w: 144, h: 16, type: 'ledge' },
-    { x: 9100, y: 320, w: 144, h: 16, type: 'desk' },
+    { x: 9198, y: 320, w: 144, h: 16, type: 'desk' },
   ],
 
   // Question blocks: floating above ground level, player can walk UNDER them
@@ -385,7 +385,7 @@ const LEVEL_2 = {
   // ~50 floating platforms using desk, terminal, column types
   platforms: [
     // == ENTRANCE LOBBY (0-1200) ==
-    { x: 300, y: 340, w: 144, h: 16, type: 'desk' },
+    { x: 424, y: 340, w: 144, h: 16, type: 'desk' },
     { x: 550, y: 290, w: 120, h: 16, type: 'terminal' },
     { x: 800, y: 250, w: 96, h: 16, type: 'column' },
     { x: 1050, y: 320, w: 144, h: 16, type: 'desk' },
@@ -394,7 +394,7 @@ const LEVEL_2 = {
     { x: 1240, y: 380, w: 96, h: 16, type: 'terminal' },
 
     // == SECTION 2: FIRST TRADING DESKS (1368-2280) ==
-    { x: 1500, y: 340, w: 144, h: 16, type: 'desk' },
+    { x: 1644, y: 340, w: 144, h: 16, type: 'desk' },
     { x: 1720, y: 280, w: 120, h: 16, type: 'terminal' },
     { x: 1950, y: 240, w: 96, h: 16, type: 'column' },
     { x: 2100, y: 310, w: 144, h: 16, type: 'desk' },
@@ -403,8 +403,8 @@ const LEVEL_2 = {
     { x: 2330, y: 370, w: 96, h: 16, type: 'terminal' },
 
     // == SECTION 3: TERMINAL BANKS (2472-3360) ==
-    { x: 2600, y: 340, w: 120, h: 16, type: 'terminal' },
-    { x: 2800, y: 280, w: 96, h: 16, type: 'column' },
+    { x: 2688, y: 340, w: 120, h: 16, type: 'terminal' },
+    { x: 2888, y: 280, w: 96, h: 16, type: 'column' },
     { x: 2980, y: 230, w: 120, h: 16, type: 'terminal' },
     { x: 3150, y: 300, w: 144, h: 16, type: 'desk' },
 
@@ -414,8 +414,8 @@ const LEVEL_2 = {
 
     // == SECTION 4: THE PIT (3576-4680) ==
     { x: 3700, y: 350, w: 144, h: 16, type: 'desk' },
-    { x: 3920, y: 290, w: 120, h: 16, type: 'terminal' },
-    { x: 4100, y: 240, w: 96, h: 16, type: 'column' },
+    { x: 4168, y: 290, w: 120, h: 16, type: 'terminal' },
+    { x: 4168, y: 240, w: 96, h: 16, type: 'column' },
     { x: 4280, y: 200, w: 120, h: 16, type: 'terminal' },
     { x: 4450, y: 260, w: 144, h: 16, type: 'desk' },
     { x: 4600, y: 320, w: 96, h: 16, type: 'terminal' },
@@ -433,7 +433,7 @@ const LEVEL_2 = {
 
     // == SECTION 6: RECOVERY ZONE (5520-6360) ==
     { x: 5650, y: 350, w: 144, h: 16, type: 'desk' },
-    { x: 5880, y: 290, w: 120, h: 16, type: 'terminal' },
+    { x: 6004, y: 290, w: 120, h: 16, type: 'terminal' },
     { x: 6050, y: 240, w: 96, h: 16, type: 'column' },
     { x: 6200, y: 310, w: 144, h: 16, type: 'desk' },
 
@@ -443,10 +443,10 @@ const LEVEL_2 = {
     // == SECTION 7: HIGH-FREQUENCY ZONE (6528-7680) ==
     { x: 6650, y: 340, w: 96, h: 16, type: 'terminal' },
     { x: 6830, y: 280, w: 72, h: 16, type: 'column' },
-    { x: 6970, y: 230, w: 96, h: 16, type: 'terminal' },
+    { x: 7038, y: 230, w: 96, h: 16, type: 'terminal' },
     { x: 7130, y: 280, w: 72, h: 16, type: 'column' },
     { x: 7280, y: 340, w: 120, h: 16, type: 'desk' },
-    { x: 7450, y: 250, w: 96, h: 16, type: 'terminal' },
+    { x: 7518, y: 250, w: 96, h: 16, type: 'terminal' },
     { x: 7580, y: 310, w: 120, h: 16, type: 'desk' },
 
     // == OVER PIT 7 ==
@@ -466,7 +466,7 @@ const LEVEL_2 = {
     { x: 9230, y: 230, w: 120, h: 16, type: 'column' },
     { x: 9400, y: 290, w: 144, h: 16, type: 'desk' },
     { x: 9700, y: 340, w: 120, h: 16, type: 'terminal' },
-    { x: 9950, y: 260, w: 96, h: 16, type: 'column' },
+    { x: 10018, y: 260, w: 96, h: 16, type: 'column' },
 
     // == OVER PIT 9 (widest) ==
     { x: 10250, y: 360, w: 96, h: 16, type: 'terminal' },
@@ -784,7 +784,7 @@ const LEVEL_3 = {
   // ~60 platforms using ledge, server, crystal types
   platforms: [
     // == MINE ENTRANCE (0-1080) ==
-    { x: 280, y: 340, w: 120, h: 16, type: 'server' },
+    { x: 404, y: 340, w: 120, h: 16, type: 'server' },
     { x: 480, y: 290, w: 96, h: 16, type: 'crystal' },
     { x: 700, y: 250, w: 72, h: 16, type: 'ledge' },
     { x: 900, y: 320, w: 120, h: 16, type: 'server' },
@@ -793,8 +793,8 @@ const LEVEL_3 = {
     { x: 1110, y: 380, w: 96, h: 16, type: 'crystal' },
 
     // == SECTION 2: TUNNELS (1248-2040) ==
-    { x: 1380, y: 340, w: 120, h: 16, type: 'server' },
-    { x: 1560, y: 280, w: 96, h: 16, type: 'crystal' },
+    { x: 1448, y: 340, w: 120, h: 16, type: 'server' },
+    { x: 1628, y: 280, w: 96, h: 16, type: 'crystal' },
     { x: 1720, y: 230, w: 72, h: 16, type: 'ledge' },
     { x: 1900, y: 300, w: 120, h: 16, type: 'server' },
 
@@ -804,8 +804,8 @@ const LEVEL_3 = {
 
     // == SECTION 3: SERVER FARMS (2256-3000) ==
     { x: 2380, y: 340, w: 96, h: 16, type: 'server' },
-    { x: 2540, y: 270, w: 72, h: 16, type: 'crystal' },
-    { x: 2680, y: 220, w: 96, h: 16, type: 'ledge' },
+    { x: 2608, y: 270, w: 72, h: 16, type: 'crystal' },
+    { x: 2748, y: 220, w: 96, h: 16, type: 'ledge' },
     { x: 2850, y: 300, w: 120, h: 16, type: 'server' },
 
     // == OVER PIT 3 (wide) ==
@@ -814,9 +814,9 @@ const LEVEL_3 = {
 
     // == SECTION 4: CRYSTAL CAVERN (3240-4200) ==
     { x: 3380, y: 340, w: 120, h: 16, type: 'crystal' },
-    { x: 3560, y: 280, w: 96, h: 16, type: 'server' },
+    { x: 3628, y: 280, w: 96, h: 16, type: 'server' },
     { x: 3800, y: 230, w: 72, h: 16, type: 'crystal' },
-    { x: 3880, y: 200, w: 96, h: 16, type: 'ledge' },
+    { x: 3948, y: 200, w: 96, h: 16, type: 'ledge' },
     { x: 4050, y: 260, w: 120, h: 16, type: 'crystal' },
 
     // == OVER PIT 4 ==
@@ -833,8 +833,8 @@ const LEVEL_3 = {
 
     // == SECTION 6: HASH MINES (4944-5760) ==
     { x: 5080, y: 340, w: 96, h: 16, type: 'server' },
-    { x: 5250, y: 280, w: 72, h: 16, type: 'crystal' },
-    { x: 5400, y: 230, w: 96, h: 16, type: 'ledge' },
+    { x: 5318, y: 280, w: 72, h: 16, type: 'crystal' },
+    { x: 5468, y: 230, w: 96, h: 16, type: 'ledge' },
     { x: 5570, y: 300, w: 120, h: 16, type: 'server' },
 
     // == OVER PIT 6 ==
@@ -843,7 +843,7 @@ const LEVEL_3 = {
 
     // == SECTION 7: NEON CORRIDOR (5976-6960) ==
     { x: 6100, y: 340, w: 96, h: 16, type: 'server' },
-    { x: 6260, y: 280, w: 72, h: 16, type: 'crystal' },
+    { x: 6328, y: 280, w: 72, h: 16, type: 'crystal' },
     { x: 6480, y: 230, w: 72, h: 16, type: 'ledge' },
     { x: 6540, y: 280, w: 96, h: 16, type: 'crystal' },
     { x: 6700, y: 340, w: 72, h: 16, type: 'server' },
@@ -864,7 +864,7 @@ const LEVEL_3 = {
 
     // == SECTION 9: BLOCKCHAIN BRIDGE (7764-8760) ==
     { x: 7900, y: 340, w: 120, h: 16, type: 'server' },
-    { x: 8100, y: 280, w: 96, h: 16, type: 'crystal' },
+    { x: 8168, y: 280, w: 96, h: 16, type: 'crystal' },
     { x: 8380, y: 230, w: 72, h: 16, type: 'ledge' },
     { x: 8500, y: 290, w: 120, h: 16, type: 'server' },
     { x: 8680, y: 340, w: 96, h: 16, type: 'crystal' },
@@ -874,8 +874,8 @@ const LEVEL_3 = {
 
     // == SECTION 10: DEEP MINES (8952-10800) ==
     { x: 9100, y: 340, w: 120, h: 16, type: 'server' },
-    { x: 9350, y: 280, w: 96, h: 16, type: 'crystal' },
-    { x: 9550, y: 230, w: 72, h: 16, type: 'ledge' },
+    { x: 9418, y: 280, w: 96, h: 16, type: 'crystal' },
+    { x: 9618, y: 230, w: 72, h: 16, type: 'ledge' },
     { x: 9750, y: 280, w: 96, h: 16, type: 'crystal' },
     { x: 9950, y: 340, w: 120, h: 16, type: 'server' },
     { x: 10200, y: 260, w: 72, h: 16, type: 'crystal' },
@@ -889,7 +889,7 @@ const LEVEL_3 = {
     // == SECTION 11: PRE-BOSS GAUNTLET (11040-12600) ==
     { x: 11180, y: 340, w: 96, h: 16, type: 'server' },
     { x: 11350, y: 280, w: 72, h: 16, type: 'crystal' },
-    { x: 11500, y: 230, w: 72, h: 16, type: 'ledge' },
+    { x: 11568, y: 230, w: 72, h: 16, type: 'ledge' },
     { x: 11650, y: 280, w: 96, h: 16, type: 'crystal' },
     { x: 11800, y: 340, w: 120, h: 16, type: 'server' },
     { x: 12000, y: 260, w: 72, h: 16, type: 'crystal' },
