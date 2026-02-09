@@ -127,10 +127,49 @@ class AudioManager {
     this._playTone(1047, 0.6, 'sine', 0.06, 0.4);
   }
 
+  playGrizzlyStomp() {
+    // Heavy impact — deeper than normal stomp
+    this._playTone(120, 0.15, 'sawtooth', 0.18);
+    this._playTone(80, 0.2, 'square', 0.15, 0.05);
+    this._playTone(200, 0.1, 'triangle', 0.1, 0.1);
+    this._playTone(60, 0.3, 'sawtooth', 0.1, 0.15);
+  }
+
+  playMarketCrash() {
+    // Alarm siren — rising and falling tones
+    this._playTone(400, 0.3, 'sawtooth', 0.15);
+    this._playTone(600, 0.3, 'sawtooth', 0.15, 0.3);
+    this._playTone(400, 0.3, 'sawtooth', 0.15, 0.6);
+    this._playTone(600, 0.3, 'sawtooth', 0.12, 0.9);
+    this._playTone(300, 0.5, 'square', 0.1, 1.2);
+  }
+
   playDividend() {
     this._playTone(1200, 0.06, 'sine', 0.12);
     this._playTone(1600, 0.06, 'sine', 0.1, 0.04);
     this._playTone(2000, 0.1, 'sine', 0.08, 0.08);
     this._playTone(1600, 0.15, 'triangle', 0.06, 0.12);
+  }
+
+  playBossRoar() {
+    this._playTone(80, 0.5, 'sawtooth', 0.2);
+    this._playTone(60, 0.6, 'sawtooth', 0.18, 0.1);
+    this._playTone(100, 0.3, 'square', 0.12, 0.3);
+  }
+
+  playBossShockwave() {
+    this._playTone(100, 0.3, 'sawtooth', 0.15);
+    this._playTone(60, 0.4, 'square', 0.12, 0.1);
+  }
+
+  playBossDeath() {
+    const notes = [523, 659, 784, 1047, 1319, 1568, 2093];
+    notes.forEach((freq, i) => {
+      this._playTone(freq, 0.15, 'sine', 0.15, i * 0.08);
+    });
+    this._playTone(523, 1.0, 'sine', 0.08, 0.6);
+    this._playTone(784, 1.0, 'sine', 0.08, 0.6);
+    this._playTone(1047, 1.0, 'sine', 0.08, 0.6);
+    this._playTone(1568, 1.0, 'sine', 0.06, 0.6);
   }
 }

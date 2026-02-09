@@ -12,6 +12,12 @@ class HUD {
     if (this.tickerOffset > totalWidth) {
       this.tickerOffset -= totalWidth;
     }
+    // Update flash timers for real-time price updates
+    for (const stock of this.tickerStocks) {
+      if (stock._flashTimer > 0) {
+        stock._flashTimer -= dt;
+      }
+    }
   }
 
   render(ctx, player, canvasWidth) {
@@ -44,8 +50,15 @@ class HUD {
         ctx.fillStyle = CONFIG.COLORS.WHITE;
         ctx.fillText(stock.symbol, xPos, 12);
 
-        // Price and change
-        ctx.fillStyle = isUp ? CONFIG.COLORS.TICKER_GREEN : CONFIG.COLORS.TICKER_RED;
+        // Price and change — flash on real-time update
+        if (stock._flashTimer > 0) {
+          const pulse = Math.sin(stock._flashTimer * 10) > 0 ? 1 : 0.6;
+          ctx.fillStyle = stock._flash === 'green'
+            ? 'rgba(0, 255, 136, ' + pulse + ')'
+            : 'rgba(255, 68, 68, ' + pulse + ')';
+        } else {
+          ctx.fillStyle = isUp ? CONFIG.COLORS.TICKER_GREEN : CONFIG.COLORS.TICKER_RED;
+        }
         const priceText = '$' + stock.price.toFixed(2) + ' ' + arrow + Math.abs(stock.change).toFixed(1) + '%';
         ctx.fillText(priceText, xPos + 55, 12);
 
@@ -119,5 +132,37 @@ class HUD {
       const timeLeft = ' ' + Math.ceil(player.invincibleTimer) + 's';
       ctx.fillText('\u25C6 DIAMOND HANDS' + timeLeft, canvasWidth - 12, indicatorY);
     }
+  }
+
+  renderBossHealth(ctx, canvasWidth, boss) {
+    if (!boss || !boss.alive) return;
+    const barW = 200;
+    const barH = 12;
+    const barX = (canvasWidth - barW) / 2;
+    const barY = 28;
+
+    // Background
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillRect(barX - 2, barY - 2, barW + 4, barH + 4);
+
+    // Health bar
+    const healthPct = boss.hp / boss.maxHp;
+    const barColor = boss.phase === 3 ? '#FF2222' : boss.phase === 2 ? '#FF8800' : '#FF4444';
+    ctx.fillStyle = '#333';
+    ctx.fillRect(barX, barY, barW, barH);
+    ctx.fillStyle = barColor;
+    ctx.fillRect(barX, barY, barW * healthPct, barH);
+
+    // Border
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX, barY, barW, barH);
+
+    // Label
+    ctx.fillStyle = '#FFF';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('THE WHALE', canvasWidth / 2, barY + barH / 2);
   }
 }

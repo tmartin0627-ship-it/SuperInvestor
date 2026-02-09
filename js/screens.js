@@ -325,6 +325,7 @@ class LevelCompleteScreen {
     this.finalScore = 0;
     this.bullsCollected = 0;
     this.timeTaken = 0;
+    this.timeBonus = 0;
     this.leaderboardData = null;
     this.playerRank = null;
     this.playerTotal = null;
@@ -382,25 +383,29 @@ class LevelCompleteScreen {
       ctx.fillStyle = CONFIG.COLORS.WHITE;
       ctx.fillText('Time: ' + this.timeTaken.toFixed(1) + 's', w / 2, h * 0.68);
     }
-
-    // Leaderboard
     if (this.animTime > showDelay + 0.9) {
-      renderLeaderboardSection(ctx, w, h, 0.76, this);
+      ctx.fillStyle = this.timeBonus > 0 ? CONFIG.COLORS.TICKER_GREEN : '#888';
+      ctx.fillText('Time Bonus: +$' + this.timeBonus.toLocaleString(), w / 2, h * 0.74);
     }
 
-    if (this.animTime > 2 && this.leaderboardStatus !== 'pending') {
+    // Leaderboard
+    if (this.animTime > showDelay + 1.2) {
+      renderLeaderboardSection(ctx, w, h, 0.80, this);
+    }
+
+    if (this.animTime > 2.5 && this.leaderboardStatus !== 'pending') {
       if (Math.floor(this.animTime * 1.5) % 2 === 0) {
         ctx.fillStyle = '#AAA';
         ctx.font = '20px sans-serif';
         const isMobileLC = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-        ctx.fillText(isMobileLC ? 'Tap to play again' : 'Press ENTER to play again', w / 2, h * 0.88);
+        ctx.fillText(isMobileLC ? 'Tap to continue' : 'Press ENTER to continue', w / 2, h * 0.93);
       }
     }
 
     // Celebratory text
     ctx.fillStyle = '#555';
     ctx.font = 'italic 13px sans-serif';
-    ctx.fillText('Congratulations! You survived the bear market.', w / 2, h * 0.95);
+    ctx.fillText('Congratulations! You survived the bear market.', w / 2, h * 0.97);
   }
 }
 
@@ -437,27 +442,32 @@ function renderLeaderboardSection(ctx, w, h, startY, screen) {
   // Top scores header
   const tableTop = h * startY + 22;
   ctx.fillStyle = '#999';
-  ctx.font = 'bold 12px monospace';
-  ctx.fillText('--- TOP SCORES ---', w / 2, tableTop);
+  ctx.font = 'bold 11px monospace';
+  ctx.fillText('--- TOP 10 ---', w / 2, tableTop);
 
-  // Leaderboard rows
-  const rowH = 16;
-  const data = screen.leaderboardData.slice(0, 5);
+  // Leaderboard rows — two columns: 1-5 left, 6-10 right
+  const rowH = 14;
+  const data = screen.leaderboardData.slice(0, 10);
+  const colOffset = 160; // half-width of each column
+
   for (let i = 0; i < data.length; i++) {
     const entry = data[i];
-    const y = tableTop + 18 + i * rowH;
+    const col = i < 5 ? 0 : 1;
+    const row = i < 5 ? i : i - 5;
+    const colCenter = col === 0 ? w / 2 - colOffset / 2 - 10 : w / 2 + colOffset / 2 + 10;
+    const y = tableTop + 16 + row * rowH;
     const rank = (i + 1) + '.';
-    const name = entry.player_name.substring(0, 12);
+    const name = entry.player_name.substring(0, 10);
     const score = '$' + entry.score.toLocaleString();
 
     ctx.fillStyle = i === 0 ? CONFIG.COLORS.BULL_GOLD : '#CCC';
-    ctx.font = '12px monospace';
+    ctx.font = '11px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(rank, w / 2 - 80, y);
+    ctx.fillText(rank, colCenter - 65, y);
     ctx.textAlign = 'left';
-    ctx.fillText(name, w / 2 - 70, y);
+    ctx.fillText(name, colCenter - 56, y);
     ctx.textAlign = 'right';
-    ctx.fillText(score, w / 2 + 100, y);
+    ctx.fillText(score, colCenter + 80, y);
     ctx.textAlign = 'center';
   }
 }

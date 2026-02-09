@@ -66,7 +66,103 @@ class Platform {
           ctx.stroke();
         }
         break;
+
+      case 'terminal':
+        // Trading terminal desk
+        ctx.fillStyle = '#4a3a2a';
+        ctx.fillRect(sx, sy, this.width, this.height);
+        ctx.fillStyle = '#5a4a3a';
+        ctx.fillRect(sx, sy, this.width, 5);
+        // Screen
+        ctx.fillStyle = '#0a2a0a';
+        ctx.fillRect(sx + 6, sy - 20, this.width - 12, 18);
+        ctx.fillStyle = '#00FF88';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('$$$', sx + 10, sy - 12);
+        break;
+
+      case 'column':
+        // Stone column top
+        ctx.fillStyle = '#8a8a9a';
+        ctx.fillRect(sx, sy, this.width, this.height);
+        ctx.fillStyle = '#9a9aaa';
+        ctx.fillRect(sx - 4, sy, this.width + 8, 5);
+        ctx.fillStyle = '#7a7a8a';
+        ctx.fillRect(sx + 4, sy + this.height, this.width - 8, 40);
+        break;
+
+      case 'server':
+        // Server rack top
+        ctx.fillStyle = '#1a1a2a';
+        ctx.fillRect(sx, sy, this.width, this.height);
+        ctx.fillStyle = '#2a2a3a';
+        ctx.fillRect(sx, sy, this.width, 4);
+        // LED lights
+        for (let i = 0; i < this.width - 10; i += 12) {
+          ctx.fillStyle = Math.random() > 0.3 ? '#00FFCC' : '#FF00FF';
+          ctx.fillRect(sx + 6 + i, sy + 7, 3, 3);
+        }
+        break;
+
+      case 'crystal':
+        // Glowing crystal platform
+        ctx.fillStyle = '#6a00cc';
+        ctx.fillRect(sx, sy, this.width, this.height);
+        ctx.fillStyle = '#8a20ee';
+        ctx.fillRect(sx, sy, this.width, 4);
+        // Glow
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#cc44ff';
+        ctx.fillRect(sx - 2, sy - 2, this.width + 4, this.height + 4);
+        ctx.globalAlpha = 1;
+        break;
     }
+  }
+}
+
+class MovingPlatform {
+  constructor(x, y, width, height, type, waypoints, speed) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.type = type || 'ledge';
+    this.waypoints = waypoints; // [{x, y}, {x, y}] — absolute positions
+    this.speed = speed || 60;
+    this.currentWP = 0;
+    this.vx = 0;
+    this.vy = 0;
+    this._platform = new Platform(x, y, width, height, type);
+  }
+
+  update(dt) {
+    const target = this.waypoints[this.currentWP];
+    const dx = target.x - this.x;
+    const dy = target.y - this.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < 2) {
+      // Reached waypoint, move to next
+      this.x = target.x;
+      this.y = target.y;
+      this.currentWP = (this.currentWP + 1) % this.waypoints.length;
+      this.vx = 0;
+      this.vy = 0;
+    } else {
+      this.vx = (dx / dist) * this.speed;
+      this.vy = (dy / dist) * this.speed;
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+    }
+
+    this._platform.x = this.x;
+    this._platform.y = this.y;
+  }
+
+  render(ctx, camera) {
+    this._platform.render(ctx, camera);
   }
 }
 

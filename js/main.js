@@ -34,6 +34,21 @@ let deathPauseTimer = 0;
 let marginCallShown = false;
 let flashCrashTimer = 0;
 
+// Grizzly stomp combo tracking
+let grizzlyComboTarget = null;
+
+// Stock ticker refresh
+let lastStockFetchTime = 0;
+const STOCK_FETCH_INTERVAL = 60; // seconds
+
+// Market crash event
+let marketCrashActive = false;
+let marketCrashTimer = 0;
+let marketCrashShakeOffset = { x: 0, y: 0 };
+
+// Level system
+let currentLevelIndex = 0;
+
 // ==========================================
 //  Canvas setup
 // ==========================================
@@ -53,17 +68,25 @@ function getScale() {
 // ==========================================
 //  Game Start
 // ==========================================
-function startGame(characterType) {
-  level = loadLevel(LEVEL_1);
-  player = new Player(LEVEL_1.playerStart.x, LEVEL_1.playerStart.y, characterType);
+function startGame(characterType, levelIndex) {
+  currentLevelIndex = levelIndex || 0;
+  const LEVELS = [LEVEL_1, LEVEL_2, LEVEL_3];
+  const levelData = LEVELS[currentLevelIndex];
+  level = loadLevel(levelData);
+  player = new Player(levelData.playerStart.x, levelData.playerStart.y, characterType);
   camera = new Camera(CONFIG.VIRTUAL_WIDTH, CONFIG.VIRTUAL_HEIGHT);
   camera.levelWidth = level.width;
   camera.levelHeight = level.height;
+  background = new BackgroundRenderer(levelData.theme || 'nightCity');
   hud = new HUD(level.tickerStocks);
   levelTime = 0;
   deathPauseTimer = 0;
   marginCallShown = false;
   leaderboardPending = false;
+  grizzlyComboTarget = null;
+  marketCrashActive = false;
+  marketCrashTimer = 0;
+  marketCrashShakeOffset = { x: 0, y: 0 };
   leaderboard.resetSession();
 
   // Wire up question block callbacks
@@ -86,12 +109,18 @@ function startGame(characterType) {
 }
 
 function spawnFromBlock(contents, x, y) {
+  let item;
   if (contents === 'bull') {
-    level.collectibles.push(new GoldBull(x, y));
+    item = new GoldBull(x, y);
   } else if (contents === 'hodlItem') {
-    level.collectibles.push(new HodlItem(x, y));
+    item = new HodlItem(x, y);
   } else if (contents === 'greenCandle') {
-    level.collectibles.push(new GreenCandle(x, y));
+    item = new GreenCandle(x, y);
+  }
+  if (item) {
+    item.fromBlock = true;
+    item.vy = -200; // Pop upward
+    level.collectibles.push(item);
   }
 }
 
@@ -160,8 +189,39 @@ function updatePlaying(dt) {
 
   levelTime += dt;
 
+  // Periodic stock ticker refresh
+  lastStockFetchTime += dt;
+  if (lastStockFetchTime >= STOCK_FETCH_INTERVAL) {
+    lastStockFetchTime = 0;
+    fetchLiveStockData().then(stocks => {
+      if (stocks && level && hud) {
+        const oldStocks = level.tickerStocks;
+        for (const newStock of stocks) {
+          const old = oldStocks.find(s => s.symbol === newStock.symbol);
+          if (old && old.price !== newStock.price) {
+            newStock._flash = newStock.price > old.price ? 'green' : 'red';
+            newStock._flashTimer = 2.0;
+          }
+        }
+        level.tickerStocks = stocks;
+        hud.tickerStocks = stocks;
+      }
+    });
+  }
+
   // Update player
   player.update(dt, input, level.solids);
+
+  // Grizzly stomp combo: reset if player touches ground
+  if (grizzlyComboTarget && player.onGround) {
+    if (grizzlyComboTarget.alive) {
+      grizzlyComboTarget.hp = CONFIG.GRIZZLY_HP;
+      grizzlyComboTarget.stunned = false;
+      floatingText.spawn(grizzlyComboTarget.x + grizzlyComboTarget.width / 2,
+        grizzlyComboTarget.y - 20, 'RECOVERED!', '#FF8800', 16);
+    }
+    grizzlyComboTarget = null;
+  }
 
   // Jump sounds
   if (player.superJumpedThisFrame) {
@@ -209,11 +269,26 @@ function updatePlaying(dt) {
       const playerFalling = player.vy > 0;
 
       if (playerFalling && (playerBottom - enemyTop) < enemy.height * 0.45) {
-        // Grizzly bears are immune to stomping
         if (enemy instanceof GrizzlyBear) {
-          player.vy = CONFIG.PLAYER_STOMP_BOUNCE;
-          audio.playClang();
-          floatingText.spawn(enemy.x + enemy.width / 2, enemy.y - 20, 'IMMUNE!', '#FF8800', 20);
+          // Grizzly: requires 2 stomps without touching ground
+          const killed = enemy.stomp();
+          if (killed) {
+            // Second stomp — grizzly defeated!
+            player.vy = CONFIG.PLAYER_STOMP_BOUNCE;
+            grizzlyComboTarget = null;
+            particles.bearDeath(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+            floatingText.spawn(enemy.x + enemy.width / 2, enemy.y - 20, '+500', CONFIG.COLORS.BULL_GOLD, 22);
+            player.score += 500;
+            audio.playStomp();
+          } else {
+            // First stomp — high bounce, must land again without touching ground
+            player.vy = -500; // Higher bounce for combo opportunity
+            grizzlyComboTarget = enemy;
+            enemy.stunned = true;
+            floatingText.spawn(enemy.x + enemy.width / 2, enemy.y - 20, 'STOMP AGAIN!', '#FF8800', 18);
+            player.score += 50;
+            audio.playGrizzlyStomp();
+          }
         } else {
           // STOMP baby bears
           const killed = enemy.stomp();
@@ -295,6 +370,56 @@ function updatePlaying(dt) {
     }
   }
 
+  // Update moving platforms
+  if (level.movingPlatforms) {
+    for (const mp of level.movingPlatforms) {
+      const oldX = mp.x;
+      const oldY = mp.y;
+      mp.update(dt);
+      // Carry player if standing on this platform
+      if (player.onGround && !player.deathAnimating) {
+        const onPlatform = player.y + player.height >= mp.y - 2 &&
+                           player.y + player.height <= mp.y + 4 &&
+                           player.x + player.width > mp.x &&
+                           player.x < mp.x + mp.width;
+        if (onPlatform) {
+          player.x += (mp.x - oldX);
+          player.y += (mp.y - oldY);
+        }
+      }
+    }
+  }
+
+  // Market crash events
+  if (level.marketCrashZones && !marketCrashActive) {
+    for (const zone of level.marketCrashZones) {
+      if (!zone.triggered && Math.abs(player.x - zone.x) < 50) {
+        zone.triggered = true;
+        marketCrashActive = true;
+        marketCrashTimer = 5.0; // 5 seconds
+        audio.playMarketCrash();
+        floatingText.spawn(player.x + player.width / 2, player.y - 60,
+          'MARKET CRASH!', CONFIG.COLORS.TICKER_RED, 36, 3.0);
+      }
+    }
+  }
+  if (marketCrashActive) {
+    marketCrashTimer -= dt;
+    marketCrashShakeOffset.x = (Math.random() - 0.5) * 6;
+    marketCrashShakeOffset.y = (Math.random() - 0.5) * 4;
+    // Speed up all enemies during crash
+    for (const enemy of level.enemies) {
+      if (enemy.alive) enemy.crashSpeedMult = 1.5;
+    }
+    if (marketCrashTimer <= 0) {
+      marketCrashActive = false;
+      marketCrashShakeOffset = { x: 0, y: 0 };
+      for (const enemy of level.enemies) {
+        enemy.crashSpeedMult = 1.0;
+      }
+    }
+  }
+
   // Red Candle falling hazards
   level.redCandleTimer = (level.redCandleTimer || 0) + dt;
   if (level.redCandleTimer >= 2.0) {
@@ -326,6 +451,117 @@ function updatePlaying(dt) {
     }
   }
 
+  // Boss update and collision
+  if (level.boss) {
+    const boss = level.boss;
+    if (boss.alive) {
+      boss.update(dt, level.solids, player.x);
+
+      // Player vs boss collision
+      if (!player.deathAnimating && aabbOverlap(player, boss)) {
+        if (player.invincible && player.diamondHands) {
+          // Diamond hands deals 1 damage
+          const killed = boss.stomp();
+          player.vy = CONFIG.PLAYER_STOMP_BOUNCE;
+          audio.playStomp();
+          if (killed) {
+            audio.playBossDeath();
+            floatingText.spawn(boss.x + boss.width / 2, boss.y - 30, '+2000 WHALE DOWN!', CONFIG.COLORS.BULL_GOLD, 28, 3.0);
+            player.score += 2000;
+          }
+        } else {
+          const playerBottom = player.y + player.height;
+          const bossTop = boss.y;
+          const playerFalling = player.vy > 0;
+
+          if (playerFalling && (playerBottom - bossTop) < boss.height * 0.35) {
+            // Stomp the boss
+            const killed = boss.stomp();
+            player.vy = -500; // High bounce
+            audio.playGrizzlyStomp();
+            if (killed) {
+              audio.playBossDeath();
+              floatingText.spawn(boss.x + boss.width / 2, boss.y - 30, '+2000 WHALE DOWN!', CONFIG.COLORS.BULL_GOLD, 28, 3.0);
+              player.score += 2000;
+            } else {
+              floatingText.spawn(boss.x + boss.width / 2, boss.y - 20, 'HIT! ' + boss.hp + '/' + boss.maxHp, '#FF8800', 20);
+              player.score += 100;
+              if (boss.phase === 2 && boss.hp === 6) {
+                audio.playBossRoar();
+                floatingText.spawn(boss.x + boss.width / 2, boss.y - 50, 'PHASE 2!', '#FF4444', 24, 2.0);
+              } else if (boss.phase === 3 && boss.hp === 3) {
+                audio.playBossRoar();
+                floatingText.spawn(boss.x + boss.width / 2, boss.y - 50, 'FINAL PHASE!', '#FF0000', 28, 2.0);
+              }
+            }
+          } else if (!boss.stunned) {
+            // Side hit — player takes damage
+            const died = player.takeDamage();
+            if (died) {
+              playerDeath('enemy');
+            } else {
+              audio.playDamage();
+              floatingText.spawn(player.x + player.width / 2, player.y - 20, 'OUCH!', CONFIG.COLORS.TICKER_RED, 20);
+              player.vx = (player.x < boss.x) ? -250 : 250;
+              player.vy = -250;
+            }
+          }
+        }
+      }
+
+      // Player vs boss shockwaves
+      if (!player.deathAnimating) {
+        for (const sw of boss.shockwaves) {
+          const dist = Math.abs(player.x + player.width / 2 - sw.x);
+          const playerOnGround = player.y + player.height >= 428;
+          if (playerOnGround && dist < sw.radius + 20 && dist > sw.radius - 20) {
+            const died = player.takeDamage();
+            if (died) {
+              playerDeath('enemy');
+            } else {
+              audio.playBossShockwave();
+              player.vy = -300;
+              player.vx = (player.x < sw.x) ? -200 : 200;
+              floatingText.spawn(player.x + player.width / 2, player.y - 20, 'SHOCKWAVE!', '#FFAA00', 18);
+            }
+            break;
+          }
+        }
+      }
+
+      // Player vs boss projectiles
+      if (!player.deathAnimating) {
+        for (let i = boss.projectiles.length - 1; i >= 0; i--) {
+          const p = boss.projectiles[i];
+          if (aabbOverlap(player, p)) {
+            boss.projectiles.splice(i, 1);
+            const died = player.takeDamage();
+            if (died) {
+              playerDeath('enemy');
+            } else {
+              audio.playDamage();
+              floatingText.spawn(player.x + player.width / 2, player.y - 20, 'RED CANDLE!', '#FF4444', 20);
+              player.vy = -150;
+            }
+            break;
+          }
+        }
+      }
+
+      // Boss arena walls — confine player
+      if (level.bossArena && boss.activated && !player.deathAnimating) {
+        if (player.x < level.bossArena.wallLeft) {
+          player.x = level.bossArena.wallLeft;
+          player.vx = 0;
+        }
+        if (player.x + player.width > level.bossArena.wallRight) {
+          player.x = level.bossArena.wallRight - player.width;
+          player.vx = 0;
+        }
+      }
+    }
+  }
+
   // Pit death
   if (!player.deathAnimating && player.y > CONFIG.VIRTUAL_HEIGHT + 50) {
     playerDeath('pit');
@@ -337,10 +573,14 @@ function updatePlaying(dt) {
       Math.abs(player.x + player.width / 2 - goal.x - 24) < 50 &&
       Math.abs(player.y + player.height / 2 - goal.y - 20) < 50) {
     audio.playLevelComplete();
+    // Calculate time bonus: faster = more points
+    const timeBonus = Math.max(0, Math.round(5000 - levelTime * 50));
+    player.score += timeBonus;
     levelCompleteScreen = new LevelCompleteScreen();
     levelCompleteScreen.finalScore = player.score;
     levelCompleteScreen.bullsCollected = player.totalBullsCollected;
     levelCompleteScreen.timeTaken = levelTime;
+    levelCompleteScreen.timeBonus = timeBonus;
     currentState = GameState.LEVEL_COMPLETE;
     triggerLeaderboard(player.score, player.totalBullsCollected, levelTime, player.characterType);
   }
@@ -351,7 +591,13 @@ function updatePlaying(dt) {
   }
 
   // Update collectibles animation
-  for (const c of level.collectibles) c.update(dt);
+  for (const c of level.collectibles) {
+    if (c.fromBlock && !c.settled) {
+      c.update(dt, level.solids);
+    } else {
+      c.update(dt);
+    }
+  }
 
   // Update particles
   particles.update(dt);
@@ -411,6 +657,7 @@ function updateGameOver(dt) {
   gameOverScreen.update(dt);
   if (leaderboardPending) return;
   if (input.wasPressed('Enter') || input.wasPressed('Space')) {
+    currentLevelIndex = 0;
     titleScreen = new TitleScreen();
     currentState = GameState.TITLE;
   }
@@ -419,9 +666,45 @@ function updateGameOver(dt) {
 function updateLevelComplete(dt) {
   levelCompleteScreen.update(dt);
   if (leaderboardPending) return;
-  if ((input.wasPressed('Enter') || input.wasPressed('Space')) && levelCompleteScreen.animTime > 2) {
-    titleScreen = new TitleScreen();
-    currentState = GameState.TITLE;
+  if ((input.wasPressed('Enter') || input.wasPressed('Space')) && levelCompleteScreen.animTime > 2.5) {
+    currentLevelIndex++;
+    const LEVELS = [LEVEL_1, LEVEL_2, LEVEL_3];
+    if (currentLevelIndex < LEVELS.length) {
+      // Advance to next level — keep player stats
+      const levelData = LEVELS[currentLevelIndex];
+      level = loadLevel(levelData);
+      player.x = levelData.playerStart.x;
+      player.y = levelData.playerStart.y;
+      player.spawnX = levelData.playerStart.x;
+      player.spawnY = levelData.playerStart.y;
+      player.vx = 0;
+      player.vy = 0;
+      player.onGround = false;
+      player.bullsCollected = 0;
+      camera = new Camera(CONFIG.VIRTUAL_WIDTH, CONFIG.VIRTUAL_HEIGHT);
+      camera.levelWidth = level.width;
+      camera.levelHeight = level.height;
+      background = new BackgroundRenderer(levelData.theme || 'nightCity');
+      hud = new HUD(level.tickerStocks);
+      levelTime = 0;
+      grizzlyComboTarget = null;
+      marketCrashActive = false;
+      marketCrashTimer = 0;
+      marketCrashShakeOffset = { x: 0, y: 0 };
+      leaderboardPending = false;
+      // Wire up question block callbacks
+      for (const block of level.questionBlocks) {
+        block.setHitCallback((contents, x, y) => {
+          spawnFromBlock(contents, x, y);
+          audio.playBlockHit();
+        });
+      }
+      currentState = GameState.PLAYING;
+    } else {
+      // All levels complete!
+      titleScreen = new TitleScreen();
+      currentState = GameState.TITLE;
+    }
   }
 }
 
@@ -473,6 +756,11 @@ function render() {
 }
 
 function renderPlaying() {
+  if (marketCrashActive) {
+    ctx.save();
+    ctx.translate(marketCrashShakeOffset.x, marketCrashShakeOffset.y);
+  }
+
   // Background (parallax)
   background.render(ctx, camera, CONFIG.VIRTUAL_WIDTH, CONFIG.VIRTUAL_HEIGHT, gameTime);
 
@@ -486,6 +774,13 @@ function renderPlaying() {
   for (const solid of level.solids) {
     if (solid.x + solid.width > viewLeft && solid.x < viewRight) {
       solid.render(ctx, camera);
+    }
+  }
+
+  // Moving platforms
+  if (level.movingPlatforms) {
+    for (const mp of level.movingPlatforms) {
+      mp.render(ctx, camera);
     }
   }
 
@@ -505,6 +800,11 @@ function renderPlaying() {
   // Enemies
   for (const e of level.enemies) {
     e.render(ctx, camera);
+  }
+
+  // Boss
+  if (level.boss) {
+    level.boss.render(ctx, camera);
   }
 
   // Player
@@ -529,8 +829,22 @@ function renderPlaying() {
     ctx.globalAlpha = 1;
   }
 
+  if (marketCrashActive) {
+    ctx.restore();
+    // Red tint overlay
+    ctx.globalAlpha = 0.15 + Math.sin(marketCrashTimer * 6) * 0.05;
+    ctx.fillStyle = '#FF0000';
+    ctx.fillRect(0, 0, CONFIG.VIRTUAL_WIDTH, CONFIG.VIRTUAL_HEIGHT);
+    ctx.globalAlpha = 1;
+  }
+
   // HUD (screen space)
   hud.render(ctx, player, CONFIG.VIRTUAL_WIDTH);
+
+  // Boss health bar
+  if (level.boss && level.boss.activated) {
+    hud.renderBossHealth(ctx, CONFIG.VIRTUAL_WIDTH, level.boss);
+  }
 
   // Debug overlay
   if (debugMode) {

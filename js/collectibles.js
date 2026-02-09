@@ -8,10 +8,38 @@ class GoldBull {
     this.collected = false;
     this.animTime = Math.random() * Math.PI * 2;
     this.type = 'bull';
+    this.fromBlock = false;
+    this.vy = 0;
+    this.settled = false;
   }
 
-  update(dt) {
+  update(dt, solids) {
     if (this.collected) return;
+    if (this.fromBlock && !this.settled) {
+      this.vy += CONFIG.GRAVITY * dt;
+      if (this.vy > CONFIG.MAX_FALL_SPEED) this.vy = CONFIG.MAX_FALL_SPEED;
+      this.y += this.vy * dt;
+      // Check landing on any solid (platforms + ground)
+      if (solids && this.vy > 0) {
+        for (const solid of solids) {
+          if (aabbOverlap(this, solid)) {
+            this.y = solid.y - this.height;
+            this.vy = 0;
+            this.settled = true;
+            this.baseY = this.y;
+            break;
+          }
+        }
+      }
+      // Fallback ground check
+      if (!this.settled && this.y >= 432 - this.height) {
+        this.y = 432 - this.height;
+        this.vy = 0;
+        this.settled = true;
+        this.baseY = this.y;
+      }
+      return;
+    }
     this.animTime += dt;
     this.y = this.baseY + Math.sin(this.animTime * CONFIG.BULL_BOB_SPEED) * CONFIG.BULL_BOB_AMPLITUDE;
   }
@@ -89,10 +117,36 @@ class GreenCandle {
     this.collected = false;
     this.animTime = Math.random() * Math.PI * 2;
     this.type = 'greenCandle';
+    this.fromBlock = false;
+    this.vy = 0;
+    this.settled = false;
   }
 
-  update(dt) {
+  update(dt, solids) {
     if (this.collected) return;
+    if (this.fromBlock && !this.settled) {
+      this.vy += CONFIG.GRAVITY * dt;
+      if (this.vy > CONFIG.MAX_FALL_SPEED) this.vy = CONFIG.MAX_FALL_SPEED;
+      this.y += this.vy * dt;
+      if (solids && this.vy > 0) {
+        for (const solid of solids) {
+          if (aabbOverlap(this, solid)) {
+            this.y = solid.y - this.height;
+            this.vy = 0;
+            this.settled = true;
+            this.baseY = this.y;
+            break;
+          }
+        }
+      }
+      if (!this.settled && this.y >= 432 - this.height) {
+        this.y = 432 - this.height;
+        this.vy = 0;
+        this.settled = true;
+        this.baseY = this.y;
+      }
+      return;
+    }
     this.animTime += dt;
     this.y = this.baseY + Math.sin(this.animTime * 2.5) * 4;
   }
@@ -145,10 +199,36 @@ class HodlItem {
     this.collected = false;
     this.animTime = Math.random() * Math.PI * 2;
     this.type = 'hodlItem';
+    this.fromBlock = false;
+    this.vy = 0;
+    this.settled = false;
   }
 
-  update(dt) {
+  update(dt, solids) {
     if (this.collected) return;
+    if (this.fromBlock && !this.settled) {
+      this.vy += CONFIG.GRAVITY * dt;
+      if (this.vy > CONFIG.MAX_FALL_SPEED) this.vy = CONFIG.MAX_FALL_SPEED;
+      this.y += this.vy * dt;
+      if (solids && this.vy > 0) {
+        for (const solid of solids) {
+          if (aabbOverlap(this, solid)) {
+            this.y = solid.y - this.height;
+            this.vy = 0;
+            this.settled = true;
+            this.baseY = this.y;
+            break;
+          }
+        }
+      }
+      if (!this.settled && this.y >= 432 - this.height) {
+        this.y = 432 - this.height;
+        this.vy = 0;
+        this.settled = true;
+        this.baseY = this.y;
+      }
+      return;
+    }
     this.animTime += dt;
     this.y = this.baseY + Math.sin(this.animTime * 3) * 4;
   }
