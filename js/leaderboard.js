@@ -35,20 +35,42 @@ class Leaderboard {
     localStorage.setItem('bullrun_playerName', this.playerName);
   }
 
-  async submitScore(score, bullsCollected, timeTaken, characterUsed) {
+  async submitScore(score, bullsCollected, timeTaken, characterUsed, integrityPayload) {
     if (!this.isAvailable() || this.submittedThisSession) return null;
 
     try {
+      // Use server-side RPC that validates the event log instead of direct INSERT.
+      // This prevents forged scores via raw API calls (the old direct INSERT is
+      // now blocked by RLS — see supabase_migration.sql).
+      const payload = integrityPayload || {
+        player_name: this.playerName,
+        score: Math.min(score, 49999),
+        bulls_collected: Math.min(bullsCollected, 99),
+        time_taken: Math.max(timeTaken, 10.1),
+        character_used: characterUsed,
+        event_log: '[]',
+        event_count: 0,
+        integrity_hash: '',
+        session_id: '',
+        client_version: 2
+      };
+
+      // Ensure player name is set from the leaderboard instance
+      payload.player_name = this.playerName;
+
       const { data, error } = await this.supabase
-        .from('scores')
-        .insert({
-          player_name: this.playerName,
-          score: Math.min(score, 49999),
-          bulls_collected: Math.min(bullsCollected, 99),
-          time_taken: Math.max(timeTaken, 10.1),
-          character_used: characterUsed
-        })
-        .select();
+        .rpc('submit_score', {
+          p_session_id: payload.session_id,
+          p_player_name: payload.player_name,
+          p_score: payload.score,
+          p_bulls_collected: payload.bulls_collected,
+          p_time_taken: payload.time_taken,
+          p_character_used: payload.character_used,
+          p_event_log: payload.event_log,
+          p_event_count: payload.event_count,
+          p_integrity_hash: payload.integrity_hash,
+          p_client_version: payload.client_version
+        });
 
       if (error) {
         console.warn('Leaderboard: Submit failed', error.message);

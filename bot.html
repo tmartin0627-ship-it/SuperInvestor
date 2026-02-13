@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>BULL RUN - BOT PLAYER (3 Iterations)</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      height: 100dvh;
+      font-family: sans-serif;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    canvas {
+      display: block;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/constants.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/touchcontrols.js"></script>
+  <script src="js/camera.js"></script>
+  <script src="js/physics.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/blocks.js"></script>
+  <script src="js/collectibles.js"></script>
+  <script src="js/enemies.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/level.js"></script>
+  <script src="js/hud.js"></script>
+  <script src="js/integrity.js"></script>
+  <script src="js/leaderboard.js"></script>
+  <script src="js/screens.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/recorder.js"></script>
+  <script src="js/main.js"></script>
+  <!-- Auto-player bot (loads after game is running) -->
+  <script src="js/bot.js"></script>
+</body>
+</html>
